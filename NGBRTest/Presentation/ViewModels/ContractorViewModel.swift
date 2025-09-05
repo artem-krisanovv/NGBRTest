@@ -9,10 +9,18 @@ final class ContractorViewModel: ObservableObject {
     @Published var showingAddContractor = false
     @Published var selectedContractor: Contractor?
     
-    private let apiClient: APIClient
+    private let fetchContractorsUseCase: FetchContractorsUseCaseProtocol
+    private let deleteContractorUseCase: DeleteContractorUseCaseProtocol
+    private let loadLocalContractorsUseCase: LoadLocalContractorsUseCaseProtocol
     
-    init(apiClient: APIClient = APIClient.shared) {
-        self.apiClient = apiClient
+    init(
+        fetchContractorsUseCase: FetchContractorsUseCaseProtocol = FetchContractorsUseCase(),
+        deleteContractorUseCase: DeleteContractorUseCaseProtocol = DeleteContractorUseCase(),
+        loadLocalContractorsUseCase: LoadLocalContractorsUseCaseProtocol = LoadLocalContractorsUseCase()
+    ) {
+        self.fetchContractorsUseCase = fetchContractorsUseCase
+        self.deleteContractorUseCase = deleteContractorUseCase
+        self.loadLocalContractorsUseCase = loadLocalContractorsUseCase
     }
     
     func loadContractors() async {
@@ -20,8 +28,9 @@ final class ContractorViewModel: ObservableObject {
         errorMessage = nil
         
         do {
-            //
-            contractors = []
+            contractors = try await loadLocalContractorsUseCase.execute()
+            
+            contractors = try await fetchContractorsUseCase.execute()
         } catch APIError.unauthorized {
             errorMessage = "Необходима авторизация"
         } catch APIError.accessDenied {
@@ -35,7 +44,8 @@ final class ContractorViewModel: ObservableObject {
     
     func deleteContractor(_ contractor: Contractor) async {
         do {
-            // 
+            try await deleteContractorUseCase.execute(id: contractor.id)
+            await loadContractors()
         } catch {
             errorMessage = "Ошибка при удалении: \(error.localizedDescription)"
         }

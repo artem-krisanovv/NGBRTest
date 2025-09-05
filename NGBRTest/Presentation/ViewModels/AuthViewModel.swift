@@ -9,10 +9,19 @@ final class AuthViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var isAuthenticated = false
     
-    private let apiClient: APIClient
+    private let loginUseCase: LoginUseCaseProtocol
+    private let logoutUseCase: LogoutUseCaseProtocol
+    private let tokenManager: TokenManagerProtocol
     
-    init(apiClient: APIClient = APIClient.shared) {
-        self.apiClient = apiClient
+    init(
+        loginUseCase: LoginUseCaseProtocol = LoginUseCase(),
+        logoutUseCase: LogoutUseCaseProtocol = LogoutUseCase(),
+        tokenManager: TokenManagerProtocol = TokenManager.shared
+    ) {
+        self.loginUseCase = loginUseCase
+        self.logoutUseCase = logoutUseCase
+        self.tokenManager = tokenManager
+        
         checkAuthenticationStatus()
     }
     
@@ -26,7 +35,7 @@ final class AuthViewModel: ObservableObject {
         errorMessage = nil
         
         do {
-            _ = try await apiClient.authenticate(username: username, password: password)
+            _ = try await loginUseCase.execute(username: username, password: password)
             isAuthenticated = true
             username = ""
             password = ""
@@ -46,12 +55,12 @@ final class AuthViewModel: ObservableObject {
     }
     
     func logout() async {
-        TokenManager.shared.clearTokens()
+        await logoutUseCase.execute()
         isAuthenticated = false
     }
     
     func checkAuthenticationStatus() {
-        if let _ = TokenManager.shared.loadSavedToken() {
+        if let _ = tokenManager.loadSavedToken() {
             isAuthenticated = true
         }
     }
