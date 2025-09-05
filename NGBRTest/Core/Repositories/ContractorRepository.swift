@@ -55,7 +55,7 @@ final class ContractorRepository: ContractorRepositoryProtocol {
     }
     
     func updateContractor(id: String, _ contractor: UpdateContractorRequest) async throws -> Contractor {
-        let response: [String] = try await apiClient.request(
+        let response: [String: [String]] = try await apiClient.request(
             path: "/counterparty/edit",
             method: "POST",
             body: try JSONEncoder().encode(contractor),
@@ -63,21 +63,9 @@ final class ContractorRepository: ContractorRepositoryProtocol {
             retryingAfterRefresh: false
         )
         
-        guard let idString = response.first, let responseId = Int(idString) else {
-            throw APIError.decodingError
-        }
+        print("API Response for update: \(response)")
         
-        let updatedContractor = Contractor(
-            id: responseId,
-            fullName: contractor.fullName,
-            name: contractor.name,
-            inn: contractor.inn,
-            kpp: contractor.kpp
-        )
-        
-        try await saveContractorsLocally([updatedContractor])
-        
-        return updatedContractor
+        throw ContractorError.success
     }
     
     func deleteContractor(id: String) async throws {
@@ -89,18 +77,35 @@ final class ContractorRepository: ContractorRepositoryProtocol {
         
         let fetchRequest: NSFetchRequest<Counterparty> = Counterparty.fetchRequest()
         let existingContractors = try context.fetch(fetchRequest)
-        for contractor in existingContractors {
-            context.delete(contractor)
+        
+        let newContractorIds = Set(contractors.map { String($0.id) })
+        
+        for existing in existingContractors {
+            if let existingId = existing.id, !newContractorIds.contains(existingId) {
+                context.delete(existing)
+            }
         }
         
         for contractor in contractors {
-            let localContractor = Counterparty(context: context)
-            localContractor.id = String(contractor.id)
-            localContractor.name = contractor.name
-            localContractor.details = contractor.fullName
-            localContractor.inn = contractor.inn
-            localContractor.kpp = contractor.kpp
-            localContractor.updatedAt = Date()
+            let contractorId = String(contractor.id)
+            
+            let existing = existingContractors.first { $0.id == contractorId }
+            
+            if let existing = existing {
+                existing.name = contractor.name
+                existing.details = contractor.fullName
+                existing.inn = contractor.inn
+                existing.kpp = contractor.kpp
+                existing.updatedAt = Date()
+            } else {
+                let localContractor = Counterparty(context: context)
+                localContractor.id = contractorId
+                localContractor.name = contractor.name
+                localContractor.details = contractor.fullName
+                localContractor.inn = contractor.inn
+                localContractor.kpp = contractor.kpp
+                localContractor.updatedAt = Date()
+            }
         }
         
         try context.save()

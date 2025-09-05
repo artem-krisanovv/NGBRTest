@@ -41,9 +41,12 @@ struct ContractorView: View {
                 } else {
                     List {
                         ForEach(viewModel.contractors) { contractor in
-                            ContractorRowView(contractor: contractor) {
+                            Button {
                                 viewModel.selectedContractor = contractor
+                            } label: {
+                                ContractorRowView(contractor: contractor)
                             }
+                            .buttonStyle(.plain)
                         }
                         .onDelete { indexSet in
                             guard let index = indexSet.first else { return }
@@ -115,25 +118,49 @@ struct ContractorView: View {
 
 struct ContractorRowView: View {
     let contractor: Contractor
-    let onTap: () -> Void
     
     var body: some View {
-        Button(action: onTap) {
-            VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
                 Text(contractor.name)
                     .font(.headline)
                     .foregroundColor(.primary)
                 
-                if let details = contractor.fullName, !details.isEmpty {
-                    Text(details)
+                Spacer()
+                
+                Text("ID: \(contractor.id)")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 2)
+                    .background(Color.gray.opacity(0.2))
+                    .cornerRadius(4)
+            }
+            
+            if let fullName = contractor.fullName, !fullName.isEmpty {
+                Text(fullName)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .lineLimit(2)
+            }
+            
+            HStack {
+                if !contractor.inn.isEmpty {
+                    Text("ИНН: \(contractor.inn)")
                         .font(.caption)
-                        .foregroundColor(.secondary)
-                        .lineLimit(2)
+                        .foregroundColor(.primary)
+                }
+                
+                Spacer()
+                
+                if let kpp = contractor.kpp, !kpp.isEmpty {
+                    Text("КПП: \(kpp)")
+                        .font(.caption)
+                        .foregroundColor(.primary)
                 }
             }
-            .padding(.vertical, 4)
         }
-        .buttonStyle(PlainButtonStyle())
+        .padding(.vertical, 8)
     }
 }
 
