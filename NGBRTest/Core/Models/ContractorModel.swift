@@ -50,3 +50,6 @@ extension Contractor {
         )
     }
 }
+
+// MARK: - Empty Response
+struct EmptyResponse: Codable {}
