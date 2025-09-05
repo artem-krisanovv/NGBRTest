@@ -1,20 +1,49 @@
 import Foundation
 
-enum APIError: Error {
+protocol APIClientProtocol {
+    func request<T: Decodable>(
+        path: String,
+        method: String,
+        body: Data?,
+        queryItems: [URLQueryItem]?,
+        retryingAfterRefresh: Bool
+    ) async throws -> T
+    
+    func authenticate(username: String, password: String) async throws -> AuthToken
+}
+
+enum APIError: Error, LocalizedError {
     case httpError(status: Int, data: Data?)
     case decodingError
     case unauthorized
     case accessDenied
+    case networkError
+    
+    var errorDescription: String? {
+        switch self {
+        case .httpError(let status, _):
+            return "HTTP Error: \(status)"
+        case .decodingError:
+            return "Failed to decode response"
+        case .unauthorized:
+            return "Unauthorized access"
+        case .accessDenied:
+            return "Access denied"
+        case .networkError:
+            return "Network error"
+        }
+    }
 }
 
-final class APIClient {
+final class APIClient: APIClientProtocol {
     static let shared = APIClient(baseURL: URL(string: "https://truck-api.ngbr.avesweb.ru/api")!)
 
     private let baseURL: URL
-    private let tokenManager = TokenManager.shared
+    private let tokenManager: TokenManagerProtocol
 
-    init(baseURL: URL) {
+    init(baseURL: URL, tokenManager: TokenManagerProtocol = TokenManager.shared) {
         self.baseURL = baseURL
+        self.tokenManager = tokenManager
     }
 
     func request<T: Decodable>(
@@ -27,65 +56,85 @@ final class APIClient {
         let url = makeURL(path: path, queryItems: queryItems)
         var req = URLRequest(url: url)
         req.httpMethod = method
+        
         if let body = body {
             req.httpBody = body
             req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         }
 
-        do {
-            let token = try await tokenManager.getValidAccessToken()
-            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        } catch {
-            throw APIError.unauthorized
+        if path != "/login_check" && path != "/token/refresh" {
+            do {
+                let token = try await tokenManager.getValidAccessToken()
+                req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            } catch {
+                throw APIError.unauthorized
+            }
         }
 
-        let (data, resp) = try await URLSession.shared.data(for: req)
-        guard let http = resp as? HTTPURLResponse else { throw APIError.httpError(status: -1, data: data) }
-
-        switch http.statusCode {
-        case 200...299:
-            do {
-                let decoded = try JSONDecoder().decode(T.self, from: data)
-                return decoded
-            } catch {
-                throw APIError.decodingError
+        do {
+            let (data, resp) = try await URLSession.shared.data(for: req)
+            guard let http = resp as? HTTPURLResponse else {
+                throw APIError.httpError(status: -1, data: data)
             }
 
-        case 401:
-            if retryingAfterRefresh {
-                throw APIError.unauthorized
-            }
-            do {
-                _ = try await tokenManager.getValidAccessToken()
-                return try await request(path: path, method: method, body: body, queryItems: queryItems, retryingAfterRefresh: true)
-            } catch {
-                throw APIError.unauthorized
-            }
+            switch http.statusCode {
+            case 200...299:
+                do {
+                    let decoded = try JSONDecoder().decode(T.self, from: data)
+                    return decoded
+                } catch {
+                    print("Decoding error: \(error)")
+                    throw APIError.decodingError
+                }
 
-        case 403:
-            Task.detached { [weak self] in
-                await self?.handle403Background()
-            }
-            throw APIError.accessDenied
+            case 401:
+                if retryingAfterRefresh {
+                    throw APIError.unauthorized
+                }
+                do {
+                    _ = try await tokenManager.refreshToken()
+                    return try await request(
+                        path: path,
+                        method: method,
+                        body: body,
+                        queryItems: queryItems,
+                        retryingAfterRefresh: true
+                    )
+                } catch {
+                    throw APIError.unauthorized
+                }
 
-        default:
-            throw APIError.httpError(status: http.statusCode, data: data)
+            case 403:
+                Task.detached { [weak self] in
+                    await self?.handle403Background()
+                }
+                throw APIError.accessDenied
+
+            default:
+                throw APIError.httpError(status: http.statusCode, data: data)
+            }
+        } catch {
+            if error is APIError {
+                throw error
+            }
+            throw APIError.networkError
         }
     }
 
     private func handle403Background() async {
-        guard let saved = await tokenManager.loadSavedToken() else { return }
+        guard let saved = tokenManager.loadSavedToken() else { return }
         let oldRoles = saved.roles
 
         do {
-            let newToken = try await tokenManager.getValidAccessToken()
-            let newRoles = JWTDecoder.roles(from: newToken)
+            let newToken = try await tokenManager.refreshToken()
+            let newRoles = JWTDecoder.roles(from: newToken.accessToken)
             if Set(newRoles) == Set(oldRoles) {
+                print("Access denied: roles match but access is still forbidden")
             } else {
-                //
+                print("Access denied: roles have changed")
             }
         } catch {
-            //
+            print("Failed to refresh token in background: \(error)")
         }
     }
 
@@ -96,6 +145,7 @@ final class APIClient {
     }
 }
 
+// MARK: - Authentication
 extension APIClient {
     struct LoginRequest: Encodable {
         let username: String
@@ -131,11 +181,8 @@ extension APIClient {
 
         let decoded = try JSONDecoder().decode(LoginResponse.self, from: data)
 
-        try await TokenManager.shared.saveTokens(access: decoded.token,
-                                                 refresh: decoded.refreshToken)
+        try tokenManager.saveTokens(access: decoded.token, refresh: decoded.refreshToken)
 
-        return AuthToken(accessToken: decoded.token,
-                         refreshToken: decoded.refreshToken)
+        return AuthToken(accessToken: decoded.token, refreshToken: decoded.refreshToken)
     }
 }
-

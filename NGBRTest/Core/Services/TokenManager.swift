@@ -1,17 +1,36 @@
 import Foundation
 
-enum AuthError: Error {
+enum AuthError: Error, LocalizedError {
     case noRefreshToken
     case refreshFailed
     case unauthorized
+    
+    var errorDescription: String? {
+        switch self {
+        case .noRefreshToken:
+            return "No refresh token available"
+        case .refreshFailed:
+            return "Failed to refresh token"
+        case .unauthorized:
+            return "Unauthorized"
+        }
+    }
 }
 
-actor TokenManager {
+protocol TokenManagerProtocol {
+    func loadSavedToken() -> AuthToken?
+    func saveTokens(access: String, refresh: String) throws
+    func clearTokens()
+    func getValidAccessToken() async throws -> String
+    func refreshToken() async throws -> AuthToken
+}
+
+final class TokenManager: TokenManagerProtocol {
     static let shared = TokenManager()
 
     private let keychain = KeychainService.shared
-    private let accessKey = "com.example.accessToken"
-    private let refreshKey = "com.example.refreshToken"
+    private let accessKey = "com.ngbr.accessToken"
+    private let refreshKey = "com.ngbr.refreshToken"
 
     private var refreshTask: Task<AuthToken, Error>?
 
@@ -44,8 +63,12 @@ actor TokenManager {
         if let saved = loadSavedToken(), isAccessTokenValid(saved) {
             return saved.accessToken
         }
-        let token = try await refreshIfNeeded()
+        let token = try await refreshToken()
         return token.accessToken
+    }
+    
+    func refreshToken() async throws -> AuthToken {
+        return try await refreshIfNeeded()
     }
 
     private func refreshIfNeeded() async throws -> AuthToken {
