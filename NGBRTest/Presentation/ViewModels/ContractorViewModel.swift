@@ -44,7 +44,7 @@ final class ContractorViewModel: ObservableObject {
     
     func deleteContractor(_ contractor: Contractor) async {
         do {
-            try await deleteContractorUseCase.execute(id: contractor.id)
+            try await deleteContractorUseCase.execute(id: String(contractor.id))
             await loadContractors()
         } catch {
             errorMessage = "Ошибка при удалении: \(error.localizedDescription)"

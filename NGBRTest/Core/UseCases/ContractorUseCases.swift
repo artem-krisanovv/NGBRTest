@@ -41,7 +41,12 @@ final class CreateContractorUseCase: CreateContractorUseCaseProtocol {
     }
     
     func execute(name: String, details: String?) async throws -> Contractor {
-        let request = CreateContractorRequest(name: name, details: details)
+        let request = CreateContractorRequest(
+            fullName: details,
+            name: name,
+            inn: "",
+            kpp: nil
+        )
         return try await contractorRepository.createContractor(request)
     }
 }
@@ -54,7 +59,17 @@ final class UpdateContractorUseCase: UpdateContractorUseCaseProtocol {
     }
     
     func execute(id: String, name: String, details: String?) async throws -> Contractor {
-        let request = UpdateContractorRequest(name: name, details: details)
+        guard let contractorId = Int(id) else {
+            throw APIError.decodingError
+        }
+        
+        let request = UpdateContractorRequest(
+            id: contractorId,
+            fullName: details,
+            name: name,
+            inn: "",
+            kpp: nil
+        )
         return try await contractorRepository.updateContractor(id: id, request)
     }
 }

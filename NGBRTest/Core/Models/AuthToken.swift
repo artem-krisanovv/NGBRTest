@@ -1,6 +1,6 @@
 import Foundation
 
-struct AuthToken {
+struct AuthToken: Codable {
     let accessToken: String
     let refreshToken: String
     var expiry: Date? {

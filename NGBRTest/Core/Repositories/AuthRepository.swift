@@ -24,11 +24,8 @@ final class AuthRepository: AuthRepositoryProtocol {
     }
     
     func refreshToken() async throws -> AuthToken {
-        guard let savedToken = tokenManager.loadSavedToken() else {
-            throw AuthError.noRefreshToken
-        }
-        //
-        return savedToken
+        let response = try await apiClient.refreshToken()
+        return response
     }
     
     func logout() async {

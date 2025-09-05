@@ -10,6 +10,7 @@ protocol APIClientProtocol {
     ) async throws -> T
     
     func authenticate(username: String, password: String) async throws -> AuthToken
+    func refreshToken() async throws -> AuthToken
 }
 
 enum APIError: Error, LocalizedError {
@@ -147,33 +148,6 @@ final class APIClient: APIClientProtocol {
 
 // MARK: - Authentication
 extension APIClient {
-    struct LoginRequest: Encodable {
-        let username: String
-        let password: String
-    }
-    
-    struct LoginResponse: Decodable {
-        let token: String
-        let refreshToken: String
-        
-        enum CodingKeys: String, CodingKey {
-            case token
-            case refreshToken = "refresh_token"
-        }
-        
-        init(from decoder: Decoder) throws {
-            let container = try decoder.container(keyedBy: CodingKeys.self)
-            
-            token = try container.decode(String.self, forKey: .token)
-            
-            if let refresh = try? container.decode(String.self, forKey: .refreshToken) {
-                refreshToken = refresh
-            } else {
-                refreshToken = token
-            }
-        }
-    }
-    
     func authenticate(username: String, password: String) async throws -> AuthToken {
         let url = baseURL.appendingPathComponent("login_check")
         var req = URLRequest(url: url)
@@ -208,6 +182,41 @@ extension APIClient {
         } catch {
             print("Decoding error: \(error)")
             print("Response data: \(responseString)")
+            throw APIError.decodingError
+        }
+    }
+    
+    func refreshToken() async throws -> AuthToken {
+        guard let savedToken = tokenManager.loadSavedToken() else {
+            throw AuthError.noRefreshToken
+        }
+        
+        let url = baseURL.appendingPathComponent("token/refresh")
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let body = RefreshTokenRequest(refreshToken: savedToken.refreshToken)
+        req.httpBody = try JSONEncoder().encode(body)
+        
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        guard let http = resp as? HTTPURLResponse else {
+            throw APIError.httpError(status: -1, data: data)
+        }
+        
+        guard (200..<300).contains(http.statusCode) else {
+            if http.statusCode == 401 {
+                throw AuthError.unauthorized
+            } else {
+                throw APIError.httpError(status: http.statusCode, data: data)
+            }
+        }
+        
+        do {
+            let decoded = try JSONDecoder().decode(RefreshTokenResponse.self, from: data)
+            try tokenManager.saveTokens(access: decoded.token, refresh: decoded.refreshToken)
+            return AuthToken(accessToken: decoded.token, refreshToken: decoded.refreshToken)
+        } catch {
             throw APIError.decodingError
         }
     }

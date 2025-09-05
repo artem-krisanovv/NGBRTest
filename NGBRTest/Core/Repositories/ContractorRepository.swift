@@ -23,49 +23,43 @@ final class ContractorRepository: ContractorRepositoryProtocol {
     }
     
     func fetchContractors() async throws -> [Contractor] {
-        let testContractors = [
-            Contractor(
-                id: "1",
-                name: "ООО Название компании",
-                details: "Описание контрагента",
-                createdAt: Date(),
-                updatedAt: Date()
-            ),
-            Contractor(
-                id: "2",
-                name: "ИП Иванов И.И.",
-                details: "Описание ндивидуального предпринимателя",
-                createdAt: Date(),
-                updatedAt: Date()
-            ),
-            Contractor(
-                id: "3",
-                name: "ООО Название компании",
-                details: "Описание контрагента",
-                createdAt: Date(),
-                updatedAt: Date()
-            ),
-            Contractor(
-                id: "4",
-                name: "ИП Петров И.И.",
-                details: "Описание ндивидуального предпринимателя",
-                createdAt: Date(),
-                updatedAt: Date()
+        do {
+            let response: [Contractor] = try await apiClient.request(
+                path: "/counterparty",
+                method: "GET",
+                body: nil,
+                queryItems: nil,
+                retryingAfterRefresh: false
             )
-        ]
-        
-        try await saveContractorsLocally(testContractors)
-        
-        return testContractors
+            
+            try await saveContractorsLocally(response)
+            
+            return response
+        } catch {
+            print("API недоступен, загружаем из локальной БД: \(error)")
+            return try await loadContractorsFromLocal()
+        }
     }
     
     func createContractor(_ contractor: CreateContractorRequest) async throws -> Contractor {
+        let response: [String] = try await apiClient.request(
+            path: "/counterparty/add",
+            method: "POST",
+            body: try JSONEncoder().encode(contractor),
+            queryItems: nil,
+            retryingAfterRefresh: false
+        )
+        
+        guard let idString = response.first, let id = Int(idString) else {
+            throw APIError.decodingError
+        }
+        
         let newContractor = Contractor(
-            id: UUID().uuidString,
+            id: id,
+            fullName: contractor.fullName,
             name: contractor.name,
-            details: contractor.details,
-            createdAt: Date(),
-            updatedAt: Date()
+            inn: contractor.inn,
+            kpp: contractor.kpp
         )
         
         try await saveContractorsLocally([newContractor])
@@ -74,12 +68,24 @@ final class ContractorRepository: ContractorRepositoryProtocol {
     }
     
     func updateContractor(id: String, _ contractor: UpdateContractorRequest) async throws -> Contractor {
+        let response: [String] = try await apiClient.request(
+            path: "/counterparty/edit",
+            method: "POST",
+            body: try JSONEncoder().encode(contractor),
+            queryItems: nil,
+            retryingAfterRefresh: false
+        )
+        
+        guard let idString = response.first, let responseId = Int(idString) else {
+            throw APIError.decodingError
+        }
+        
         let updatedContractor = Contractor(
-            id: id,
+            id: responseId,
+            fullName: contractor.fullName,
             name: contractor.name,
-            details: contractor.details,
-            createdAt: Date(),
-            updatedAt: Date()
+            inn: contractor.inn,
+            kpp: contractor.kpp
         )
         
         try await saveContractorsLocally([updatedContractor])
@@ -98,12 +104,12 @@ final class ContractorRepository: ContractorRepositoryProtocol {
             let localContractor = contractor.toLocalModel()
             
             let fetchRequest: NSFetchRequest<Counterparty> = Counterparty.fetchRequest()
-            fetchRequest.predicate = NSPredicate(format: "id == %@", contractor.id)
+            fetchRequest.predicate = NSPredicate(format: "id == %@", String(contractor.id))
             
             if let existing = try context.fetch(fetchRequest).first {
                 existing.name = contractor.name
-                existing.details = contractor.details
-                existing.updatedAt = contractor.updatedAt
+                existing.details = contractor.fullName
+                existing.updatedAt = Date()
             } else {
                 context.insert(localContractor)
             }

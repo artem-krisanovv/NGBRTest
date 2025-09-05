@@ -15,19 +15,17 @@ final class ContractorDetailViewModel: ObservableObject {
     private let contractor: Contractor?
     private let isEditing: Bool
     
-    init(
-        contractor: Contractor? = nil,
-        createContractorUseCase: CreateContractorUseCaseProtocol = CreateContractorUseCase(),
-        updateContractorUseCase: UpdateContractorUseCaseProtocol = UpdateContractorUseCase()
-    ) {
-        self.contractor = contractor
+    init(contractor: Contractor? = nil,
+         createContractorUseCase: CreateContractorUseCaseProtocol = CreateContractorUseCase(),
+         updateContractorUseCase: UpdateContractorUseCaseProtocol = UpdateContractorUseCase()) {
         self.createContractorUseCase = createContractorUseCase
         self.updateContractorUseCase = updateContractorUseCase
+        self.contractor = contractor
         self.isEditing = contractor != nil
         
         if let contractor = contractor {
             self.name = contractor.name
-            self.details = contractor.details ?? ""
+            self.details = contractor.fullName ?? ""
         }
     }
     
@@ -44,9 +42,9 @@ final class ContractorDetailViewModel: ObservableObject {
             if isEditing {
                 guard let contractor = contractor else { return }
                 _ = try await updateContractorUseCase.execute(
-                    id: contractor.id,
+                    id: String(contractor.id),
                     name: name,
-                    details: details.isEmpty ? nil : details
+                    details: details
                 )
             } else {
                 _ = try await createContractorUseCase.execute(

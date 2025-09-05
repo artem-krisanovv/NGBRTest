@@ -89,17 +89,11 @@ struct ContractorRowView: View {
                     .font(.headline)
                     .foregroundColor(.primary)
                 
-                if let details = contractor.details, !details.isEmpty {
+                if let details = contractor.fullName, !details.isEmpty {
                     Text(details)
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .lineLimit(2)
-                }
-                
-                if let updatedAt = contractor.updatedAt {
-                    Text("Обновлено: \(updatedAt, style: .relative)")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
                 }
             }
             .padding(.vertical, 4)

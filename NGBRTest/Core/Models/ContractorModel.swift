@@ -3,53 +3,58 @@ import CoreData
 
 // MARK: - Contractor Models
 struct Contractor: Codable, Identifiable {
-    let id: String
+    let id: Int
+    let fullName: String?
     let name: String
-    let details: String?
-    let createdAt: Date?
-    let updatedAt: Date?
+    let inn: String
+    let kpp: String?
     
     enum CodingKeys: String, CodingKey {
         case id
+        case fullName = "fullName"
         case name
-        case details
-        case createdAt = "created_at"
-        case updatedAt = "updated_at"
+        case inn
+        case kpp
     }
 }
 
 struct CreateContractorRequest: Codable {
+    let fullName: String?
     let name: String
-    let details: String?
+    let inn: String
+    let kpp: String?
 }
 
 struct UpdateContractorRequest: Codable {
+    let id: Int
+    let fullName: String?
     let name: String
-    let details: String?
+    let inn: String
+    let kpp: String?
 }
 
-// MARK: - Local Contractor Model (for Core Data)
+// MARK: - Local Contractor Model
 extension Contractor {
     func toLocalModel() -> Counterparty {
-        let local = Counterparty()
-        local.id = self.id
+        let context = PersistenceController.shared.container.viewContext
+        let local = Counterparty(context: context)
+        local.id = String(self.id)
         local.name = self.name
-        local.details = self.details
-        local.updatedAt = self.updatedAt
+        local.details = self.fullName
+        local.inn = self.inn
+        local.kpp = self.kpp
+        local.updatedAt = Date()
         return local
     }
     
     static func fromLocalModel(_ local: Counterparty) -> Contractor? {
-        guard let id = local.id, let name = local.name else { return nil }
+        guard let idString = local.id, let id = Int(idString), let name = local.name else { return nil }
         return Contractor(
             id: id,
+            fullName: local.details,
             name: name,
-            details: local.details,
-            createdAt: nil,
-            updatedAt: local.updatedAt
+            inn: local.inn ?? "", 
+            kpp: local.kpp
         )
     }
 }
-
-// MARK: - Empty Response
-struct EmptyResponse: Codable {}
