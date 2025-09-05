@@ -47,6 +47,11 @@ struct ContractorDetailView: View {
                     Text(errorMessage)
                 }
             }
+            .onChange(of: viewModel.isSaved) { _, newValue in
+                if newValue {
+                    dismiss()
+                }
+            }
         }
     }
 }

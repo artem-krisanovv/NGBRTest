@@ -6,13 +6,38 @@ struct ContractorView: View {
     
     var body: some View {
         NavigationStack {
-            LazyVStack {
+            VStack {
                 Text("Список контрагентов")
                     .font(.title2)
                     .padding()
                 
                 if viewModel.isLoading && viewModel.contractors.isEmpty {
-                    ProgressView("Загрузка контрагентов...")
+                    VStack {
+                        ProgressView("Загрузка контрагентов...")
+                            .scaleEffect(1.2)
+                        Text("Подождите, загружаем данные...")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .padding(.top, 8)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if viewModel.contractors.isEmpty {
+                    VStack(spacing: 16) {
+                        Image(systemName: "person.3.fill")
+                            .font(.system(size: 60))
+                            .foregroundColor(.gray)
+                        
+                        Text("Контрагенты не найдены")
+                            .font(.title2)
+                            .fontWeight(.medium)
+                        
+                        Text("Нажмите кнопку \"Добавить\" чтобы создать первого контрагента")
+                            .font(.body)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     List {
                         ForEach(viewModel.contractors) { contractor in
