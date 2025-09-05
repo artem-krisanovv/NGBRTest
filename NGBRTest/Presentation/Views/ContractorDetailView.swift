@@ -5,7 +5,9 @@ struct ContractorDetailView: View {
     @Environment(\.dismiss) private var dismiss
     
     init(contractor: Contractor? = nil) {
-        _viewModel = StateObject(wrappedValue: ContractorDetailViewModel(contractor: contractor))
+        _viewModel = StateObject(
+            wrappedValue: ContractorDetailViewModel(contractor: contractor)
+        )
     }
     
     var body: some View {

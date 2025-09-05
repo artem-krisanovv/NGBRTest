@@ -34,15 +34,31 @@ struct ContractorView: View {
                 
                 Spacer()
                 
-                Button("Выйти") {
-                    Task {
-                        await appState.logout()
+                HStack {
+                    
+                    Button("Добавить") {
+                        Task {
+                            viewModel.showingAddContractor = true
+                        }
                     }
+                    .tint(.appRed)
+                    
+                    Button("Выйти") {
+                        Task {
+                            await appState.logout()
+                        }
+                    }
+                    .tint(.black)
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(.black)
                 .cornerRadius(8)
                 .padding()
+            }
+            .sheet(isPresented: $viewModel.showingAddContractor) {
+                ContractorDetailView()
+            }
+            .sheet(item: $viewModel.selectedContractor) { contractor in
+                ContractorDetailView(contractor: contractor)
             }
             .alert("Ошибка", isPresented: .constant(viewModel.errorMessage != nil), actions: {
                 Button("ОК", role: .cancel) {

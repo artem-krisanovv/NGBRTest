@@ -15,9 +15,11 @@ final class ContractorDetailViewModel: ObservableObject {
     private let contractor: Contractor?
     private let isEditing: Bool
     
-    init(contractor: Contractor? = nil,
-         createContractorUseCase: CreateContractorUseCaseProtocol = CreateContractorUseCase(),
-         updateContractorUseCase: UpdateContractorUseCaseProtocol = UpdateContractorUseCase()) {
+    init(
+        contractor: Contractor? = nil,
+        createContractorUseCase: CreateContractorUseCaseProtocol = CreateContractorUseCase(),
+        updateContractorUseCase: UpdateContractorUseCaseProtocol = UpdateContractorUseCase()
+    ) {
         self.contractor = contractor
         self.createContractorUseCase = createContractorUseCase
         self.updateContractorUseCase = updateContractorUseCase

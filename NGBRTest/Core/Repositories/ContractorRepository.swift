@@ -23,34 +23,72 @@ final class ContractorRepository: ContractorRepositoryProtocol {
     }
     
     func fetchContractors() async throws -> [Contractor] {
-        //
-        return []
+        let testContractors = [
+            Contractor(
+                id: "1",
+                name: "ООО Название компании",
+                details: "Описание контрагента",
+                createdAt: Date(),
+                updatedAt: Date()
+            ),
+            Contractor(
+                id: "2",
+                name: "ИП Иванов И.И.",
+                details: "Описание ндивидуального предпринимателя",
+                createdAt: Date(),
+                updatedAt: Date()
+            ),
+            Contractor(
+                id: "3",
+                name: "ООО Название компании",
+                details: "Описание контрагента",
+                createdAt: Date(),
+                updatedAt: Date()
+            ),
+            Contractor(
+                id: "4",
+                name: "ИП Петров И.И.",
+                details: "Описание ндивидуального предпринимателя",
+                createdAt: Date(),
+                updatedAt: Date()
+            )
+        ]
+        
+        try await saveContractorsLocally(testContractors)
+        
+        return testContractors
     }
     
     func createContractor(_ contractor: CreateContractorRequest) async throws -> Contractor {
-        //
-        return Contractor(
+        let newContractor = Contractor(
             id: UUID().uuidString,
             name: contractor.name,
             details: contractor.details,
             createdAt: Date(),
             updatedAt: Date()
         )
+        
+        try await saveContractorsLocally([newContractor])
+        
+        return newContractor
     }
     
     func updateContractor(id: String, _ contractor: UpdateContractorRequest) async throws -> Contractor {
-        //
-        return Contractor(
+        let updatedContractor = Contractor(
             id: id,
             name: contractor.name,
             details: contractor.details,
             createdAt: Date(),
             updatedAt: Date()
         )
+        
+        try await saveContractorsLocally([updatedContractor])
+        
+        return updatedContractor
     }
     
     func deleteContractor(id: String) async throws {
-        //
+        try await deleteContractorFromLocal(id: id)
     }
     
     func saveContractorsLocally(_ contractors: [Contractor]) async throws {
@@ -81,5 +119,16 @@ final class ContractorRepository: ContractorRepositoryProtocol {
         
         let localContractors = try context.fetch(fetchRequest)
         return localContractors.compactMap { Contractor.fromLocalModel($0) }
+    }
+    
+    private func deleteContractorFromLocal(id: String) async throws {
+        let context = persistenceController.container.viewContext
+        let fetchRequest: NSFetchRequest<Counterparty> = Counterparty.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "id == %@", id)
+        
+        let contractors = try context.fetch(fetchRequest)
+        contractors.forEach { context.delete($0) }
+        
+        try context.save()
     }
 }
