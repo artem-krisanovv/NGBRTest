@@ -28,8 +28,6 @@ final class ContractorViewModel: ObservableObject {
         errorMessage = nil
         
         do {
-            contractors = try await loadLocalContractorsUseCase.execute()
-            
             contractors = try await fetchContractorsUseCase.execute()
         } catch APIError.unauthorized {
             errorMessage = "Необходима авторизация"
@@ -37,6 +35,12 @@ final class ContractorViewModel: ObservableObject {
             errorMessage = "Доступ запрещен"
         } catch {
             errorMessage = error.localizedDescription
+            do {
+                contractors = try await loadLocalContractorsUseCase.execute()
+            } catch {
+                contractors = []
+                print("Ошибка при загрузке контрагента: \(error)")
+            }
         }
         
         isLoading = false

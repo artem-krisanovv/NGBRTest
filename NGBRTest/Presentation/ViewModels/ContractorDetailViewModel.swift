@@ -5,6 +5,8 @@ import SwiftUI
 final class ContractorDetailViewModel: ObservableObject {
     @Published var name = ""
     @Published var details = ""
+    @Published var inn = ""
+    @Published var kpp = ""
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var isSaved = false
@@ -26,12 +28,19 @@ final class ContractorDetailViewModel: ObservableObject {
         if let contractor = contractor {
             self.name = contractor.name
             self.details = contractor.fullName ?? ""
+            self.inn = contractor.inn
+            self.kpp = contractor.kpp ?? ""
         }
     }
     
     func save() async {
         guard !name.isEmpty else {
-            errorMessage = "Название контрагента обязательно"
+            errorMessage = "Название не может быть пустым"
+            return
+        }
+        
+        guard !inn.isEmpty else {
+            errorMessage = "ИНН не может быть пустым"
             return
         }
         
@@ -40,25 +49,28 @@ final class ContractorDetailViewModel: ObservableObject {
         
         do {
             if isEditing {
-                guard let contractor = contractor else { return }
                 _ = try await updateContractorUseCase.execute(
-                    id: String(contractor.id),
+                    id: String(contractor!.id),
                     name: name,
-                    details: details
+                    details: details,
+                    inn: inn,
+                    kpp: kpp.isEmpty ? nil : kpp
                 )
             } else {
                 _ = try await createContractorUseCase.execute(
                     name: name,
-                    details: details.isEmpty ? nil : details
+                    details: details,
+                    inn: inn,
+                    kpp: kpp.isEmpty ? nil : kpp
                 )
             }
+            
             isSaved = true
-        } catch APIError.unauthorized {
-            errorMessage = "Необходима авторизация"
-        } catch APIError.accessDenied {
-            errorMessage = "Доступ запрещен"
+            
+        } catch ContractorError.success {
+            isSaved = true
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = "Ошибка при сохранении: \(error.localizedDescription)"
         }
         
         isLoading = false

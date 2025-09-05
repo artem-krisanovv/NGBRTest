@@ -56,9 +56,19 @@ struct ContractorView: View {
             }
             .sheet(isPresented: $viewModel.showingAddContractor) {
                 ContractorDetailView()
+                    .onDisappear {
+                        Task {
+                            await viewModel.loadContractors()
+                        }
+                    }
             }
             .sheet(item: $viewModel.selectedContractor) { contractor in
                 ContractorDetailView(contractor: contractor)
+                    .onDisappear {
+                        Task {
+                            await viewModel.loadContractors()
+                        }
+                    }
             }
             .alert("Ошибка", isPresented: .constant(viewModel.errorMessage != nil), actions: {
                 Button("ОК", role: .cancel) {

@@ -13,21 +13,11 @@ struct ContractorDetailView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section("Информация о контрагенте") {
+                Section("ИНФОРМАЦИЯ О КОНТРАГЕНТЕ") {
                     TextField("Название", text: $viewModel.name)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                    
-                    TextField("Описание", text: $viewModel.details, axis: .vertical)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .lineLimit(3...6)
-                }
-                
-                if let errorMessage = viewModel.errorMessage {
-                    Section {
-                        Text(errorMessage)
-                            .foregroundColor(.red)
-                            .font(.caption)
-                    }
+                    TextField("Описание", text: $viewModel.details)
+                    TextField("ИНН", text: $viewModel.inn)
+                    TextField("КПП", text: $viewModel.kpp)
                 }
             }
             .navigationTitle(viewModel.title)
@@ -48,17 +38,14 @@ struct ContractorDetailView: View {
                     .disabled(viewModel.isLoading || viewModel.name.isEmpty)
                 }
             }
-            .overlay {
-                if viewModel.isLoading {
-                    ProgressView("Сохранение...")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Color.black.opacity(0.1))
+            .alert("Ошибка", isPresented: .constant(viewModel.errorMessage != nil)) {
+                Button("ОК") {
+                    viewModel.errorMessage = nil
                 }
-            }
-        }
-        .onChange(of: viewModel.isSaved) { _, newValue in
-            if newValue {
-                dismiss()
+            } message: {
+                if let errorMessage = viewModel.errorMessage {
+                    Text(errorMessage)
+                }
             }
         }
     }

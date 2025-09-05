@@ -78,13 +78,17 @@ final class APIClient: APIClientProtocol {
                 throw APIError.httpError(status: -1, data: data)
             }
             
+            let responseString = String(data: data, encoding: .utf8) ?? "No data"
+            print("API Response (\(path)): \(responseString)")
+            
             switch http.statusCode {
             case 200...299:
                 do {
                     let decoded = try JSONDecoder().decode(T.self, from: data)
                     return decoded
                 } catch {
-                    print("Decoding error: \(error)")
+                    print("Decoding error for \(path): \(error)")
+                    print("Response data: \(responseString)")
                     throw APIError.decodingError
                 }
                 

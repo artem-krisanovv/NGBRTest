@@ -36,11 +36,10 @@ final class ContractorRepository: ContractorRepositoryProtocol {
             
             return response
         } catch {
-            print("API недоступен, загружаем из локальной БД: \(error)")
+            print("API недоступен, загружаем из локально: \(error)")
             return try await loadContractorsFromLocal()
         }
     }
-    
     func createContractor(_ contractor: CreateContractorRequest) async throws -> Contractor {
         let response: [String] = try await apiClient.request(
             path: "/counterparty/add",
@@ -50,21 +49,9 @@ final class ContractorRepository: ContractorRepositoryProtocol {
             retryingAfterRefresh: false
         )
         
-        guard let idString = response.first, let id = Int(idString) else {
-            throw APIError.decodingError
-        }
+        print("API Response for create: \(response)")
         
-        let newContractor = Contractor(
-            id: id,
-            fullName: contractor.fullName,
-            name: contractor.name,
-            inn: contractor.inn,
-            kpp: contractor.kpp
-        )
-        
-        try await saveContractorsLocally([newContractor])
-        
-        return newContractor
+        throw ContractorError.success
     }
     
     func updateContractor(id: String, _ contractor: UpdateContractorRequest) async throws -> Contractor {
@@ -100,19 +87,20 @@ final class ContractorRepository: ContractorRepositoryProtocol {
     func saveContractorsLocally(_ contractors: [Contractor]) async throws {
         let context = persistenceController.container.viewContext
         
+        let fetchRequest: NSFetchRequest<Counterparty> = Counterparty.fetchRequest()
+        let existingContractors = try context.fetch(fetchRequest)
+        for contractor in existingContractors {
+            context.delete(contractor)
+        }
+        
         for contractor in contractors {
-            let localContractor = contractor.toLocalModel()
-            
-            let fetchRequest: NSFetchRequest<Counterparty> = Counterparty.fetchRequest()
-            fetchRequest.predicate = NSPredicate(format: "id == %@", String(contractor.id))
-            
-            if let existing = try context.fetch(fetchRequest).first {
-                existing.name = contractor.name
-                existing.details = contractor.fullName
-                existing.updatedAt = Date()
-            } else {
-                context.insert(localContractor)
-            }
+            let localContractor = Counterparty(context: context)
+            localContractor.id = String(contractor.id)
+            localContractor.name = contractor.name
+            localContractor.details = contractor.fullName
+            localContractor.inn = contractor.inn
+            localContractor.kpp = contractor.kpp
+            localContractor.updatedAt = Date()
         }
         
         try context.save()

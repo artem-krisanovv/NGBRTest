@@ -6,11 +6,11 @@ protocol FetchContractorsUseCaseProtocol {
 }
 
 protocol CreateContractorUseCaseProtocol {
-    func execute(name: String, details: String?) async throws -> Contractor
+    func execute(name: String, details: String?, inn: String, kpp: String?) async throws -> Contractor
 }
 
 protocol UpdateContractorUseCaseProtocol {
-    func execute(id: String, name: String, details: String?) async throws -> Contractor
+    func execute(id: String, name: String, details: String?, inn: String, kpp: String?) async throws -> Contractor
 }
 
 protocol DeleteContractorUseCaseProtocol {
@@ -40,12 +40,12 @@ final class CreateContractorUseCase: CreateContractorUseCaseProtocol {
         self.contractorRepository = contractorRepository
     }
     
-    func execute(name: String, details: String?) async throws -> Contractor {
+    func execute(name: String, details: String?, inn: String, kpp: String?) async throws -> Contractor {
         let request = CreateContractorRequest(
             fullName: details,
             name: name,
-            inn: "",
-            kpp: nil
+            inn: inn,
+            kpp: kpp
         )
         return try await contractorRepository.createContractor(request)
     }
@@ -58,7 +58,7 @@ final class UpdateContractorUseCase: UpdateContractorUseCaseProtocol {
         self.contractorRepository = contractorRepository
     }
     
-    func execute(id: String, name: String, details: String?) async throws -> Contractor {
+    func execute(id: String, name: String, details: String?, inn: String, kpp: String?) async throws -> Contractor {
         guard let contractorId = Int(id) else {
             throw APIError.decodingError
         }
@@ -67,8 +67,8 @@ final class UpdateContractorUseCase: UpdateContractorUseCaseProtocol {
             id: contractorId,
             fullName: details,
             name: name,
-            inn: "",
-            kpp: nil
+            inn: inn,
+            kpp: kpp
         )
         return try await contractorRepository.updateContractor(id: id, request)
     }
