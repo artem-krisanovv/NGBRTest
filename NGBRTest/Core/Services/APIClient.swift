@@ -134,12 +134,12 @@ final class APIClient: APIClientProtocol {
             let newToken = try await tokenManager.refreshToken()
             let newRoles = JWTDecoder.roles(from: newToken.accessToken)
             if Set(newRoles) == Set(oldRoles) {
-                print("Access denied: roles match but access is still forbidden")
+                print("Доступ запрещен: роли не изменились")
             } else {
-                print("Access denied: roles have changed")
+                print("Доступ запрещен: роли изменились")
             }
         } catch {
-            print("Failed to refresh token in background: \(error)")
+            print("Ошибка обновления токена: \(error)")
         }
     }
     
