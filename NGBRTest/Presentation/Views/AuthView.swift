@@ -48,7 +48,6 @@ struct AuthView: View {
                             .padding()
                     }
                 })
-                //.disabled(viewModel.isLoading || viewModel.username.isEmpty || viewModel.password.isEmpty)
                 .buttonStyle(.borderedProminent)
                 .tint(.black)
                 .cornerRadius(8)

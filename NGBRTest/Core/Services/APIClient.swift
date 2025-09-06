@@ -166,19 +166,21 @@ extension APIClient {
             throw APIError.httpError(status: -1, data: data)
         }
         
+        let responseString = String(data: data, encoding: .utf8) ?? "No data"
+        print("API Response: \(responseString)")
+        
         guard (200..<300).contains(http.statusCode) else {
-            if http.statusCode == 401 {
+            switch http.statusCode {
+            case 400, 401, 500:
                 throw APIError.unauthorized
-            } else {
+            case 403:
+                throw APIError.accessDenied
+            default:
                 let errorBody = String(data: data, encoding: .utf8) ?? "No data"
                 print("API Error \(http.statusCode): \(errorBody)")
                 throw APIError.httpError(status: http.statusCode, data: data)
             }
         }
-        
-        let responseString = String(data: data, encoding: .utf8) ?? "No data"
-        print("API Response: \(responseString)")
-        
         do {
             let decoded = try JSONDecoder().decode(LoginResponse.self, from: data)
             try tokenManager.saveTokens(access: decoded.token, refresh: decoded.refreshToken)
