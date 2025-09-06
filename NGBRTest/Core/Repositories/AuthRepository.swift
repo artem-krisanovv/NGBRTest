@@ -24,5 +24,11 @@ final class AuthRepository: AuthRepositoryProtocol {
     
     func logout() async {
         tokenManager.clearTokens()
+        clearCache()
+    }
+    
+    // MARK: - Cache Management
+    func clearCache() {
+        JWTDecoder.clearCache()
     }
 }

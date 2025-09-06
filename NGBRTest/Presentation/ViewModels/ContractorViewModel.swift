@@ -12,7 +12,7 @@ final class ContractorViewModel: ObservableObject {
     @Published var selectedContractor: Contractor?
     
     // MARK: - Dependencies
-    private let appState: AppStateManager
+    private var appState: AppStateManager
     private let fetchContractorsUseCase: FetchContractorsUseCaseProtocol
     private let deleteContractorUseCase: DeleteContractorUseCaseProtocol
     private let loadLocalContractorsUseCase: LoadLocalContractorsUseCaseProtocol
@@ -27,6 +27,11 @@ final class ContractorViewModel: ObservableObject {
         self.fetchContractorsUseCase = fetchContractorsUseCase
         self.deleteContractorUseCase = deleteContractorUseCase
         self.loadLocalContractorsUseCase = loadLocalContractorsUseCase
+        self.appState = appState
+    }
+    
+    // MARK: - App State Update
+    func updateAppState(_ appState: AppStateManager) {
         self.appState = appState
     }
     

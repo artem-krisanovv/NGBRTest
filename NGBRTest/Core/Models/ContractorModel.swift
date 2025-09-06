@@ -36,8 +36,7 @@ struct UpdateContractorRequest: Codable {
 
 // MARK: - Local Contractor Model
 extension Contractor {
-    func toLocalModel() -> Counterparty {
-        let context = PersistenceController.shared.container.viewContext
+    func toLocalModel(context: NSManagedObjectContext) -> Counterparty {
         let local = Counterparty(context: context)
         local.id = String(self.id)
         local.name = self.name

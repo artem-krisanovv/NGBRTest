@@ -20,16 +20,46 @@ struct JWTTokenInfo {
 
 // MARK: - JWT Decoder Implementation
 struct JWTDecoder {
+    // MARK: - Cache Info
+    private static var tokenInfoCache: [String: JWTTokenInfo] = [:]
+    private static let cacheQueue = DispatchQueue(label: "jwt.cache", attributes: .concurrent)
+    private static let maxCacheSize = 10
+    
     // MARK: - Public Methods
     static func decodeTokenInfo(from jwt: String) -> JWTTokenInfo? {
+        if let cached = cacheQueue.sync(execute: {
+            return tokenInfoCache[jwt]
+        }) {
+            if cached.isExpired {
+                cacheQueue.async(flags: .barrier) {
+                    tokenInfoCache.removeValue(forKey: jwt)
+                }
+                return nil
+            }
+            return cached
+        }
+        
+        cleanupExpiredTokens()
+        
         guard let payload = try? decodePayload(jwt) else { return nil }
         
-        return JWTTokenInfo(
+        let tokenInfo = JWTTokenInfo(
             expirationDate: extractExpirationDate(from: payload),
             roles: extractRoles(from: payload),
             username: payload["username"] as? String,
             issuedAt: extractIssuedAt(from: payload)
         )
+        
+        cacheQueue.async(flags: .barrier) {
+            if tokenInfoCache.count >= maxCacheSize {
+                if let firstKey = tokenInfoCache.keys.first {
+                    tokenInfoCache.removeValue(forKey: firstKey)
+                }
+            }
+            tokenInfoCache[jwt] = tokenInfo
+        }
+        
+        return tokenInfo
     }
     
     static func expirationDate(from jwt: String) -> Date? {
@@ -38,6 +68,32 @@ struct JWTDecoder {
     
     static func roles(from jwt: String) -> [String] {
         return decodeTokenInfo(from: jwt)?.roles ?? []
+    }
+    
+    // MARK: - Cache Management
+    static func clearCache() {
+        cacheQueue.async(flags: .barrier) {
+            tokenInfoCache.removeAll()
+        }
+    }
+    
+    static func removeFromCache(_ jwt: String) {
+        cacheQueue.async(flags: .barrier) {
+            tokenInfoCache.removeValue(forKey: jwt)
+        }
+    }
+    
+    // MARK: - Automatic Cache Cleanup
+    private static func cleanupExpiredTokens() {
+        cacheQueue.async(flags: .barrier) {
+            let expiredKeys = tokenInfoCache.compactMap { (key, tokenInfo) in
+                tokenInfo.isExpired ? key : nil
+            }
+            
+            expiredKeys.forEach { key in
+                tokenInfoCache.removeValue(forKey: key)
+            }
+        }
     }
     
     // MARK: - Private Methods

@@ -2,20 +2,20 @@ import SwiftUI
 
 // MARK: - Contractor View
 struct ContractorView: View {
-    @State private var viewModel: ContractorViewModel?
+    @StateObject private var viewModel: ContractorViewModel
     @EnvironmentObject private var appState: AppStateManager
+    
+    init() {
+        self._viewModel = StateObject(wrappedValue: ContractorViewModel(appState: AppStateManager()))
+    }
     
     // MARK: - Body
     var body: some View {
         NavigationStack {
-            if let viewModel = viewModel {
-                ContractorViewContent(viewModel: viewModel)
-            } else {
-                ProgressView("Загрузка...")
-                    .onAppear {
-                        viewModel = ContractorViewModel(appState: appState)
-                    }
-            }
+            ContractorViewContent(viewModel: viewModel)
+        }
+        .onAppear {
+            viewModel.updateAppState(appState)
         }
     }
 }

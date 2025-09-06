@@ -65,42 +65,43 @@ final class ContractorRepository: ContractorRepositoryProtocol {
     }
     
     func saveContractorsLocally(_ contractors: [Contractor]) async throws {
-        let context = persistenceController.container.viewContext
+        let context = persistenceController.container.newBackgroundContext()
         
-        let fetchRequest: NSFetchRequest<Counterparty> = Counterparty.fetchRequest()
-        let existingContractors = try context.fetch(fetchRequest)
-        
-        let newContractorIds = Set(contractors.map { String($0.id) })
-        
-        for existing in existingContractors {
-            if let existingId = existing.id, !newContractorIds.contains(existingId) {
-                context.delete(existing)
-            }
-        }
-        
-        for contractor in contractors {
-            let contractorId = String(contractor.id)
+        try await context.perform {
+            let fetchRequest: NSFetchRequest<Counterparty> = Counterparty.fetchRequest()
+            let existingContractors = try context.fetch(fetchRequest)
+            let newContractorIds = Set(contractors.map { String($0.id) })
             
-            let existing = existingContractors.first { $0.id == contractorId }
-            
-            if let existing = existing {
-                existing.name = contractor.name
-                existing.details = contractor.fullName
-                existing.inn = contractor.inn
-                existing.kpp = contractor.kpp
-                existing.updatedAt = Date()
-            } else {
-                let localContractor = Counterparty(context: context)
-                localContractor.id = contractorId
-                localContractor.name = contractor.name
-                localContractor.details = contractor.fullName
-                localContractor.inn = contractor.inn
-                localContractor.kpp = contractor.kpp
-                localContractor.updatedAt = Date()
+            existingContractors.forEach { existing in
+                if let existingId = existing.id, !newContractorIds.contains(existingId) {
+                    context.delete(existing)
+                }
             }
+            
+            for contractor in contractors {
+                let contractorId = String(contractor.id)
+                
+                let existing = existingContractors.first { $0.id == contractorId }
+                
+                if let existing = existing {
+                    existing.name = contractor.name
+                    existing.details = contractor.fullName
+                    existing.inn = contractor.inn
+                    existing.kpp = contractor.kpp
+                    existing.updatedAt = Date()
+                } else {
+                    let localContractor = contractor.toLocalModel(context: context)
+                    localContractor.id = contractorId
+                    localContractor.name = contractor.name
+                    localContractor.details = contractor.fullName
+                    localContractor.inn = contractor.inn
+                    localContractor.kpp = contractor.kpp
+                    localContractor.updatedAt = Date()
+                }
+            }
+            
+            try context.save()
         }
-        
-        try context.save()
     }
     
     // MARK: - Local Operations

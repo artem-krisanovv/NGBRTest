@@ -34,6 +34,7 @@ struct AuthToken: Codable {
     
     // MARK: - Update Method
     func updatedTokens(access: String, refresh: String) -> AuthToken {
+        JWTDecoder.removeFromCache(accessToken)
         return AuthToken(accessToken: access, refreshToken: refresh)
     }
 }

@@ -91,7 +91,7 @@ final class APIClient: APIClientProtocol {
             throw APIError.networkError
         }
     }
-
+    
     // MARK: - Error 403 Handling
     private func handle403Background() async {
         guard let saved = tokenManager.loadSavedToken() else { return }
@@ -100,6 +100,9 @@ final class APIClient: APIClientProtocol {
         do {
             let newToken = try await tokenManager.refreshToken()
             let newRoles = JWTDecoder.roles(from: newToken.accessToken)
+            
+            JWTDecoder.removeFromCache(saved.accessToken)
+            
             if Set(newRoles) == Set(oldRoles) {
                 print("Доступ запрещен: роли не изменились")
             } else {
@@ -107,6 +110,7 @@ final class APIClient: APIClientProtocol {
             }
         } catch {
             print("Ошибка обновления токена: \(error)")
+            clearJWTCache()
         }
     }
     
@@ -115,6 +119,11 @@ final class APIClient: APIClientProtocol {
         var comp = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
         comp.queryItems = queryItems
         return comp.url!
+    }
+    
+    // MARK: - Cache Management
+    func clearJWTCache() {
+        JWTDecoder.clearCache()
     }
 }
 
