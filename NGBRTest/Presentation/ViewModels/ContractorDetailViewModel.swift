@@ -77,7 +77,7 @@ final class ContractorDetailViewModel: ObservableObject {
     }
     
     var title: String {
-        isEditing ? "Редактировать контрагента" : "Новый контрагент"
+        isEditing ? "Редактировать" : "Новый контрагент"
     }
     
     var saveButtonTitle: String {

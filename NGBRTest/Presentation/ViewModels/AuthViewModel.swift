@@ -39,16 +39,15 @@ final class AuthViewModel: ObservableObject {
             isAuthenticated = true
             username = ""
             password = ""
+            
         } catch APIError.unauthorized {
             errorMessage = "Неверный логин или пароль"
-        } catch APIError.httpError(let status, let data) {
-            var body = ""
-            if let data = data, let s = String(data: data, encoding: .utf8) {
-                body = s
-            }
-            errorMessage = "Ошибка сервера: \(status). \(body)"
+        } catch APIError.accessDenied {
+            errorMessage = "Доступ запрещен"
+        } catch APIError.httpError {
+            errorMessage = "Ошибка сервера"
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = "Произошла ошибка при авторизации"
         }
         
         isLoading = false
