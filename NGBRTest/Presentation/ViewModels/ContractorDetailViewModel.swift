@@ -1,8 +1,10 @@
 import Foundation
 import SwiftUI
 
+// MARK: - Contractor Detail ViewModel
 @MainActor
 final class ContractorDetailViewModel: ObservableObject {
+    // MARK: - Published Properties
     @Published var name = ""
     @Published var details = ""
     @Published var inn = ""
@@ -11,12 +13,14 @@ final class ContractorDetailViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var isSaved = false
     
+    // MARK: - Dependencies
     private let createContractorUseCase: CreateContractorUseCaseProtocol
     private let updateContractorUseCase: UpdateContractorUseCaseProtocol
     
     private let contractor: Contractor?
     private let isEditing: Bool
     
+    // MARK: - Initialization
     init(contractor: Contractor? = nil,
          createContractorUseCase: CreateContractorUseCaseProtocol = CreateContractorUseCase(),
          updateContractorUseCase: UpdateContractorUseCaseProtocol = UpdateContractorUseCase()) {
@@ -33,6 +37,7 @@ final class ContractorDetailViewModel: ObservableObject {
         }
     }
     
+    // MARK: - Save Methods
     func save() async {
         guard !name.isEmpty else {
             errorMessage = "Название не может быть пустым"
@@ -76,6 +81,7 @@ final class ContractorDetailViewModel: ObservableObject {
         isLoading = false
     }
     
+    // MARK: - Title
     var title: String {
         isEditing ? "Редактировать" : "Новый контрагент"
     }

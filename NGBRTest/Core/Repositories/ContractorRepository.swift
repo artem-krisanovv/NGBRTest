@@ -1,16 +1,6 @@
 import Foundation
 import CoreData
 
-// MARK: - Repository Protocol
-protocol ContractorRepositoryProtocol {
-    func fetchContractors() async throws -> [Contractor]
-    func createContractor(_ contractor: CreateContractorRequest) async throws -> Contractor
-    func updateContractor(id: String, _ contractor: UpdateContractorRequest) async throws -> Contractor
-    func deleteContractor(id: String) async throws
-    func saveContractorsLocally(_ contractors: [Contractor]) async throws
-    func loadContractorsFromLocal() async throws -> [Contractor]
-}
-
 // MARK: - Repository Implementation
 final class ContractorRepository: ContractorRepositoryProtocol {
     private let apiClient: APIClientProtocol
@@ -22,6 +12,7 @@ final class ContractorRepository: ContractorRepositoryProtocol {
         self.persistenceController = persistenceController
     }
     
+    // MARK: - Remote Operations
     func fetchContractors() async throws -> [Contractor] {
         do {
             let response: [Contractor] = try await apiClient.request(
@@ -40,6 +31,7 @@ final class ContractorRepository: ContractorRepositoryProtocol {
             return try await loadContractorsFromLocal()
         }
     }
+    
     func createContractor(_ contractor: CreateContractorRequest) async throws -> Contractor {
         let response: [String] = try await apiClient.request(
             path: "/counterparty/add",
@@ -111,6 +103,7 @@ final class ContractorRepository: ContractorRepositoryProtocol {
         try context.save()
     }
     
+    // MARK: - Local Operations
     func loadContractorsFromLocal() async throws -> [Contractor] {
         let context = persistenceController.container.viewContext
         let fetchRequest: NSFetchRequest<Counterparty> = Counterparty.fetchRequest()

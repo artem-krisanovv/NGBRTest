@@ -1,41 +1,6 @@
 import Foundation
 
-protocol APIClientProtocol {
-    func request<T: Decodable>(
-        path: String,
-        method: String,
-        body: Data?,
-        queryItems: [URLQueryItem]?,
-        retryingAfterRefresh: Bool
-    ) async throws -> T
-    
-    func authenticate(username: String, password: String) async throws -> AuthToken
-    func refreshToken() async throws -> AuthToken
-}
-
-enum APIError: Error, LocalizedError {
-    case httpError(status: Int, data: Data?)
-    case decodingError
-    case unauthorized
-    case accessDenied
-    case networkError
-    
-    var errorDescription: String? {
-        switch self {
-        case .httpError(let status, _):
-            return "HTTP Error: \(status)"
-        case .decodingError:
-            return "Failed to decode response"
-        case .unauthorized:
-            return "Unauthorized access"
-        case .accessDenied:
-            return "Access denied"
-        case .networkError:
-            return "Network error"
-        }
-    }
-}
-
+// MARK: - APIClient Implementation
 final class APIClient: APIClientProtocol {
     static let shared = APIClient(baseURL: URL(string: "https://truck-api.ngbr.avesweb.ru/api")!)
     
@@ -47,6 +12,7 @@ final class APIClient: APIClientProtocol {
         self.tokenManager = tokenManager
     }
     
+    // MARK: - Request Methods
     func request<T: Decodable>(
         path: String,
         method: String = "GET",
@@ -125,7 +91,8 @@ final class APIClient: APIClientProtocol {
             throw APIError.networkError
         }
     }
-    
+
+    // MARK: - Error 403 Handling
     private func handle403Background() async {
         guard let saved = tokenManager.loadSavedToken() else { return }
         let oldRoles = saved.roles
@@ -143,6 +110,7 @@ final class APIClient: APIClientProtocol {
         }
     }
     
+    // MARK: - URL Building
     private func makeURL(path: String, queryItems: [URLQueryItem]? = nil) -> URL {
         var comp = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
         comp.queryItems = queryItems
@@ -150,7 +118,7 @@ final class APIClient: APIClientProtocol {
     }
 }
 
-// MARK: - Authentication
+// MARK: - Authentication Extension
 extension APIClient {
     func authenticate(username: String, password: String) async throws -> AuthToken {
         let url = baseURL.appendingPathComponent("login_check")

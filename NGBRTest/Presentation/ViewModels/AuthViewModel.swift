@@ -1,18 +1,22 @@
 import Foundation
 import SwiftUI
 
+// MARK: - Auth ViewModel
 @MainActor
 final class AuthViewModel: ObservableObject {
+    // MARK: - Published Properties
     @Published var username = ""
     @Published var password = ""
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var isAuthenticated = false
     
+    // MARK: - Dependencies
     private let loginUseCase: LoginUseCaseProtocol
     private let logoutUseCase: LogoutUseCaseProtocol
     private let tokenManager: TokenManagerProtocol
     
+    // MARK: - Initialization
     init(
         loginUseCase: LoginUseCaseProtocol = LoginUseCase(),
         logoutUseCase: LogoutUseCaseProtocol = LogoutUseCase(),
@@ -25,6 +29,7 @@ final class AuthViewModel: ObservableObject {
         checkAuthenticationStatus()
     }
     
+    // MARK: - Authentication Methods
     func login() async {
         guard !username.isEmpty && !password.isEmpty else {
             errorMessage = "Пожалуйста, заполните все поля"

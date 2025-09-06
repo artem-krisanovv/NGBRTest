@@ -1,5 +1,6 @@
 import Foundation
 
+// MARK: - Contractor Error
 enum ContractorError: Error, LocalizedError {
     case success
     

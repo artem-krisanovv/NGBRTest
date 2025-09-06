@@ -1,20 +1,23 @@
 import Foundation
 import SwiftUI
 
+// MARK: - Contractor ViewModel
 @MainActor
 final class ContractorViewModel: ObservableObject {
+    // MARK: - Published Properties
     @Published var contractors: [Contractor] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var showingAddContractor = false
     @Published var selectedContractor: Contractor?
     
+    // MARK: - Dependencies
     private let appState: AppStateManager
-    
     private let fetchContractorsUseCase: FetchContractorsUseCaseProtocol
     private let deleteContractorUseCase: DeleteContractorUseCaseProtocol
     private let loadLocalContractorsUseCase: LoadLocalContractorsUseCaseProtocol
     
+    // MARK: - Initialization
     init(
         fetchContractorsUseCase: FetchContractorsUseCaseProtocol = FetchContractorsUseCase(),
         deleteContractorUseCase: DeleteContractorUseCaseProtocol = DeleteContractorUseCase(),
@@ -27,6 +30,7 @@ final class ContractorViewModel: ObservableObject {
         self.appState = appState
     }
     
+    // MARK: - Data Operations
     func loadContractors() async {
         isLoading = true
         errorMessage = nil

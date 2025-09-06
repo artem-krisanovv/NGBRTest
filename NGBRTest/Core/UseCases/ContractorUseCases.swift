@@ -1,26 +1,6 @@
 import Foundation
 
-// MARK: - Contractor Use Cases
-protocol FetchContractorsUseCaseProtocol {
-    func execute() async throws -> [Contractor]
-}
-
-protocol CreateContractorUseCaseProtocol {
-    func execute(name: String, details: String?, inn: String, kpp: String?) async throws -> Contractor
-}
-
-protocol UpdateContractorUseCaseProtocol {
-    func execute(id: String, name: String, details: String?, inn: String, kpp: String?) async throws -> Contractor
-}
-
-protocol DeleteContractorUseCaseProtocol {
-    func execute(id: String) async throws
-}
-
-protocol LoadLocalContractorsUseCaseProtocol {
-    func execute() async throws -> [Contractor]
-}
-
+// MARK: - Fetch Use Case Implementation
 final class FetchContractorsUseCase: FetchContractorsUseCaseProtocol {
     private let contractorRepository: ContractorRepositoryProtocol
     
@@ -33,6 +13,7 @@ final class FetchContractorsUseCase: FetchContractorsUseCaseProtocol {
     }
 }
 
+// MARK: - Create Use Case Implementation
 final class CreateContractorUseCase: CreateContractorUseCaseProtocol {
     private let contractorRepository: ContractorRepositoryProtocol
     
@@ -51,6 +32,7 @@ final class CreateContractorUseCase: CreateContractorUseCaseProtocol {
     }
 }
 
+// MARK: - Update Use Case Implementation
 final class UpdateContractorUseCase: UpdateContractorUseCaseProtocol {
     private let contractorRepository: ContractorRepositoryProtocol
     
@@ -74,6 +56,7 @@ final class UpdateContractorUseCase: UpdateContractorUseCaseProtocol {
     }
 }
 
+// MARK: - Delete Use Case Implementation
 final class DeleteContractorUseCase: DeleteContractorUseCaseProtocol {
     private let contractorRepository: ContractorRepositoryProtocol
     
@@ -86,6 +69,7 @@ final class DeleteContractorUseCase: DeleteContractorUseCaseProtocol {
     }
 }
 
+// MARK: - Local Use Case Implementation
 final class LoadLocalContractorsUseCase: LoadLocalContractorsUseCaseProtocol {
     private let contractorRepository: ContractorRepositoryProtocol
     

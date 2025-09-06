@@ -18,6 +18,7 @@ struct Contractor: Codable, Identifiable {
     }
 }
 
+//MARK: - Request Models
 struct CreateContractorRequest: Codable {
     let fullName: String?
     let name: String
@@ -53,7 +54,7 @@ extension Contractor {
             id: id,
             fullName: local.details,
             name: name,
-            inn: local.inn ?? "", 
+            inn: local.inn ?? "",
             kpp: local.kpp
         )
     }

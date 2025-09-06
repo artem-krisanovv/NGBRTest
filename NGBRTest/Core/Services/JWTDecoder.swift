@@ -1,11 +1,6 @@
 import Foundation
 
-enum JWTDecodeError: Error {
-    case invalidFormat
-    case invalidBase64
-    case invalidJson
-}
-
+// MARK: - JWT Decoder Implementation
 struct JWTDecoder {
     static func decodePayload(_ jwt: String) throws -> [String: Any] {
         let parts = jwt.components(separatedBy: ".")

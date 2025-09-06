@@ -1,5 +1,6 @@
 import SwiftUI
 
+// MARK: - Contractor Detail View
 struct ContractorDetailView: View {
     @StateObject private var viewModel: ContractorDetailViewModel
     @Environment(\.dismiss) private var dismiss
@@ -10,6 +11,7 @@ struct ContractorDetailView: View {
         )
     }
     
+    // MARK: - Body
     var body: some View {
         NavigationView {
             Form {

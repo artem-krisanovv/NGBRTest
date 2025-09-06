@@ -1,11 +1,13 @@
 import Foundation
 import Security
 
+// MARK: - Keychain Service Implementation
 final class KeychainService {
     static let shared = KeychainService()
 
     private init() {}
-
+    
+    // MARK: - Keychain Operations
     func save(_ value: String, for key: String) throws {
         guard let data = value.data(using: .utf8) else {
             throw KeychainError.unexpectedEncoding
@@ -61,10 +63,5 @@ final class KeychainService {
             throw KeychainError.unhandledError(status: status)
         }
     }
-}
-
-enum KeychainError: Error {
-    case unexpectedEncoding
-    case unhandledError(status: OSStatus)
 }
 

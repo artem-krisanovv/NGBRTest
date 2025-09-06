@@ -1,12 +1,5 @@
 import Foundation
 
-// MARK: - Repository Protocol
-protocol AuthRepositoryProtocol {
-    func login(username: String, password: String) async throws -> AuthToken
-    func refreshToken() async throws -> AuthToken
-    func logout() async
-}
-
 // MARK: - Repository Implementation
 final class AuthRepository: AuthRepositoryProtocol {
     private let apiClient: APIClientProtocol
@@ -18,6 +11,7 @@ final class AuthRepository: AuthRepositoryProtocol {
         self.tokenManager = tokenManager
     }
     
+    // MARK: - Authentication Methods
     func login(username: String, password: String) async throws -> AuthToken {
         let response = try await apiClient.authenticate(username: username, password: password)
         return response

@@ -6,6 +6,7 @@ struct LoginRequest: Codable {
     let password: String
 }
 
+// MARK: - Response Models
 struct LoginResponse: Codable {
     let token: String
     let refreshToken: String
@@ -18,14 +19,6 @@ struct LoginResponse: Codable {
     }
 }
 
-struct RefreshTokenRequest: Codable {
-    let refreshToken: String
-    
-    enum CodingKeys: String, CodingKey {
-        case refreshToken = "refresh_token"
-    }
-}
-
 struct RefreshTokenResponse: Codable {
     let token: String
     let refreshToken: String
@@ -35,5 +28,14 @@ struct RefreshTokenResponse: Codable {
         case token
         case refreshToken = "refresh_token"
         case refreshTokenExpiration = "refresh_token_expiration"
+    }
+}
+
+// MARK: - Request Models
+struct RefreshTokenRequest: Codable {
+    let refreshToken: String
+    
+    enum CodingKeys: String, CodingKey {
+        case refreshToken = "refresh_token"
     }
 }

@@ -1,9 +1,11 @@
 import SwiftUI
 
+// MARK: - Authentication View
 struct AuthView: View {
     @StateObject private var viewModel = AuthViewModel()
     @EnvironmentObject private var appState: AppStateManager
     
+    // MARK: - Body
     var body: some View {
         NavigationStack {
             VStack(spacing: 20) {
@@ -72,6 +74,7 @@ struct AuthView: View {
         }
     }
 }
+
 #Preview {
     AuthView()
         .environmentObject(AppStateManager())

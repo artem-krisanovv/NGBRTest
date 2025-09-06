@@ -1,14 +1,6 @@
 import Foundation
 
-// MARK: - Auth Use Cases
-protocol LoginUseCaseProtocol {
-    func execute(username: String, password: String) async throws -> AuthToken
-}
-
-protocol LogoutUseCaseProtocol {
-    func execute() async
-}
-
+// MARK: - Login Use Case Implementation
 final class LoginUseCase: LoginUseCaseProtocol {
     private let authRepository: AuthRepositoryProtocol
     
@@ -21,6 +13,7 @@ final class LoginUseCase: LoginUseCaseProtocol {
     }
 }
 
+// MARK: - Logout Use Case Implementation
 final class LogoutUseCase: LogoutUseCaseProtocol {
     private let authRepository: AuthRepositoryProtocol
     

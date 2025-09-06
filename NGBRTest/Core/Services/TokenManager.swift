@@ -1,30 +1,6 @@
 import Foundation
 
-enum AuthError: Error, LocalizedError {
-    case noRefreshToken
-    case refreshFailed
-    case unauthorized
-    
-    var errorDescription: String? {
-        switch self {
-        case .noRefreshToken:
-            return "No refresh token available"
-        case .refreshFailed:
-            return "Failed to refresh token"
-        case .unauthorized:
-            return "Unauthorized"
-        }
-    }
-}
-
-protocol TokenManagerProtocol {
-    func loadSavedToken() -> AuthToken?
-    func saveTokens(access: String, refresh: String) throws
-    func clearTokens()
-    func getValidAccessToken() async throws -> String
-    func refreshToken() async throws -> AuthToken
-}
-
+// MARK: - Token Manager Implementation
 final class TokenManager: TokenManagerProtocol {
     static let shared = TokenManager()
 
@@ -36,6 +12,7 @@ final class TokenManager: TokenManagerProtocol {
 
     private init() {}
 
+    // MARK: - Token Storage
     func loadSavedToken() -> AuthToken? {
         guard let access = try? keychain.read(accessKey),
               let refresh = try? keychain.read(refreshKey) else {
@@ -54,6 +31,7 @@ final class TokenManager: TokenManagerProtocol {
         try? keychain.delete(refreshKey)
     }
 
+    // MARK: - Token Validation Func
     private func isAccessTokenValid(_ token: AuthToken) -> Bool {
         guard let exp = token.expiry else { return false }
         return exp.timeIntervalSinceNow > 60
@@ -67,6 +45,7 @@ final class TokenManager: TokenManagerProtocol {
         return token.accessToken
     }
     
+    // MARK: - Token Refresh Func
     func refreshToken() async throws -> AuthToken {
         return try await refreshIfNeeded()
     }
