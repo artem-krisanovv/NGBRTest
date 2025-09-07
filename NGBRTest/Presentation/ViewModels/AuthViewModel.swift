@@ -12,18 +12,12 @@ final class AuthViewModel: ObservableObject {
     @Published var isAuthenticated = false
     
     // MARK: - Dependencies
-    private let loginUseCase: LoginUseCaseProtocol
-    private let logoutUseCase: LogoutUseCaseProtocol
+    private let authRepository: AuthRepositoryProtocol
     private let tokenManager: TokenManagerProtocol
     
-    // MARK: - Initialization
-    init(
-        loginUseCase: LoginUseCaseProtocol = LoginUseCase(),
-        logoutUseCase: LogoutUseCaseProtocol = LogoutUseCase(),
-        tokenManager: TokenManagerProtocol = TokenManager.shared
-    ) {
-        self.loginUseCase = loginUseCase
-        self.logoutUseCase = logoutUseCase
+    // MARK: - Init
+    init(authRepository: AuthRepositoryProtocol, tokenManager: TokenManagerProtocol) {
+        self.authRepository = authRepository
         self.tokenManager = tokenManager
         
         checkAuthenticationStatus()
@@ -40,7 +34,7 @@ final class AuthViewModel: ObservableObject {
         errorMessage = nil
         
         do {
-            _ = try await loginUseCase.execute(username: username, password: password)
+            _ = try await authRepository.login(username: username, password: password)
             isAuthenticated = true
             username = ""
             password = ""
@@ -59,11 +53,11 @@ final class AuthViewModel: ObservableObject {
     }
     
     func logout() async {
-        await logoutUseCase.execute()
+        await authRepository.logout()
         isAuthenticated = false
     }
     
-    func checkAuthenticationStatus() {
+    private func checkAuthenticationStatus() {
         if let _ = tokenManager.loadSavedToken() {
             isAuthenticated = true
         }

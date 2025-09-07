@@ -2,12 +2,11 @@ import Foundation
 
 // MARK: - APIClient Implementation
 final class APIClient: APIClientProtocol {
-    static let shared = APIClient(baseURL: URL(string: "https://truck-api.ngbr.avesweb.ru/api")!)
-    
     private let baseURL: URL
     private let tokenManager: TokenManagerProtocol
     
-    init(baseURL: URL, tokenManager: TokenManagerProtocol = TokenManager.shared) {
+    // MARK: - Init
+    init(baseURL: URL, tokenManager: TokenManagerProtocol) {
         self.baseURL = baseURL
         self.tokenManager = tokenManager
     }

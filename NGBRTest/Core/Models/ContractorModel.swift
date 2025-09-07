@@ -3,7 +3,7 @@ import CoreData
 
 // MARK: - Contractor Models
 struct Contractor: Codable, Identifiable {
-    let id: Int
+    let id: Int64
     let fullName: String?
     let name: String
     let inn: String
@@ -38,19 +38,18 @@ struct UpdateContractorRequest: Codable {
 extension Contractor {
     func toLocalModel(context: NSManagedObjectContext) -> Counterparty {
         let local = Counterparty(context: context)
-        local.id = String(self.id)
+        local.id = self.id
         local.name = self.name
         local.details = self.fullName
         local.inn = self.inn
         local.kpp = self.kpp
-        local.updatedAt = Date()
         return local
     }
     
     static func fromLocalModel(_ local: Counterparty) -> Contractor? {
-        guard let idString = local.id, let id = Int(idString), let name = local.name else { return nil }
+        guard let name = local.name else { return nil }
         return Contractor(
-            id: id,
+            id: local.id,
             fullName: local.details,
             name: name,
             inn: local.inn ?? "",

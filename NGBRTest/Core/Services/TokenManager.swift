@@ -2,15 +2,16 @@ import Foundation
 
 // MARK: - Token Manager Implementation
 final class TokenManager: TokenManagerProtocol {
-    static let shared = TokenManager()
-    
-    private let keychain = KeychainService.shared
+    // MARK: - Private Properties
+    private let keychain: KeychainServiceProtocol
     private let accessKey = "com.ngbr.accessToken"
     private let refreshKey = "com.ngbr.refreshToken"
-    
     private var refreshTask: Task<AuthToken, Error>?
     
-    private init() {}
+    // MARK: - Init
+    init(keychain: KeychainServiceProtocol) {
+        self.keychain = keychain
+    }
     
     // MARK: - Token Storage
     func loadSavedToken() -> AuthToken? {
@@ -63,7 +64,8 @@ final class TokenManager: TokenManagerProtocol {
         
         let aKey = accessKey
         let rKey = refreshKey
-        refreshTask = Task { [saved, aKey, rKey] in
+        
+        refreshTask = Task { [saved, aKey, rKey, keychain] in
             guard let url = URL(string: "https://truck-api.ngbr.avesweb.ru/api/token/refresh") else {
                 throw AuthError.refreshFailed
             }
@@ -90,8 +92,8 @@ final class TokenManager: TokenManagerProtocol {
                 throw AuthError.refreshFailed
             }
             
-            try KeychainService.shared.save(access, for: aKey)
-            try KeychainService.shared.save(refresh, for: rKey)
+            try keychain.save(access, for: aKey)
+            try keychain.save(refresh, for: rKey)
             
             return AuthToken(accessToken: access, refreshToken: refresh)
         }
@@ -109,13 +111,13 @@ final class TokenManager: TokenManagerProtocol {
         }
     }
     
-    // MARK: - Task Management
+    // MARK: - Task Cancel
     func cancelRefreshTask() {
         refreshTask?.cancel()
         refreshTask = nil
     }
     
-    // MARK: - Cache Management
+    // MARK: - Cache
     func clearTokenCache() {
         JWTDecoder.clearCache()
     }

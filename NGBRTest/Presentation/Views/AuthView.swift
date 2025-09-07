@@ -2,8 +2,14 @@ import SwiftUI
 
 // MARK: - Authentication View
 struct AuthView: View {
-    @StateObject private var viewModel = AuthViewModel()
-    @EnvironmentObject private var appState: AppStateManager
+    @ObservedObject private var viewModel: AuthViewModel
+    @ObservedObject private var appState: AppStateManager
+    
+    // MARK: - Init
+    init(viewModel: AuthViewModel, appState: AppStateManager) {
+        self.viewModel = viewModel
+        self.appState = appState
+    }
     
     // MARK: - Body
     var body: some View {
@@ -36,8 +42,10 @@ struct AuthView: View {
                         .background(RoundedRectangle(cornerRadius: 8).strokeBorder(Color.gray.opacity(0.3)))
                 }
                 
-                Button(action: {
-                    Task { await viewModel.login() }
+                Button(action: { [weak viewModel] in
+                    Task {
+                        await viewModel?.login()
+                    }
                 }, label: {
                     if viewModel.isLoading {
                         ProgressView()
@@ -58,17 +66,17 @@ struct AuthView: View {
             }
             .padding()
             .alert("Ошибка", isPresented: .constant(viewModel.errorMessage != nil), actions: {
-                Button("ОК", role: .cancel) {
-                    viewModel.errorMessage = nil
+                Button("ОК", role: .cancel) { [weak viewModel] in
+                    viewModel?.errorMessage = nil
                 }
             }, message: {
                 if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
                 }
             })
-            .onChange(of: viewModel.isAuthenticated) { _, newValue in
+            .onChange(of: viewModel.isAuthenticated) { [weak appState] _, newValue in
                 if newValue {
-                    appState.login()
+                    appState?.login()
                 }
             }
         }
@@ -76,6 +84,7 @@ struct AuthView: View {
 }
 
 #Preview {
-    AuthView()
-        .environmentObject(AppStateManager())
+    let container = ServiceContainer()
+    let appState = AppStateManager(tokenManager: container.tokenManager)
+    return AuthViewFactory.create(serviceContainer: container, appState: appState)
 }

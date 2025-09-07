@@ -2,141 +2,132 @@ import SwiftUI
 
 // MARK: - Contractor View
 struct ContractorView: View {
-    @StateObject private var viewModel: ContractorViewModel
+    @ObservedObject private var viewModel: ContractorViewModel
     @EnvironmentObject private var appState: AppStateManager
+    @EnvironmentObject private var serviceContainer: ServiceContainer
     
-    init() {
-        self._viewModel = StateObject(wrappedValue: ContractorViewModel(appState: AppStateManager()))
+    // MARK: - Init
+    init(viewModel: ContractorViewModel) {
+        self.viewModel = viewModel
     }
     
-    // MARK: - Body
     var body: some View {
         NavigationStack {
-            ContractorViewContent(viewModel: viewModel)
-        }
-        .onAppear {
-            viewModel.updateAppState(appState)
-        }
-    }
-}
-
-// MARK: - Contractor ViewContent
-struct ContractorViewContent: View {
-    @ObservedObject var viewModel: ContractorViewModel
-    @EnvironmentObject private var appState: AppStateManager
-    
-    // MARK: - Body
-    var body: some View {
-        VStack {
-            Text("Список контрагентов")
-                .font(.title2)
-                .padding()
-            
-            if viewModel.isLoading && viewModel.contractors.isEmpty {
-                VStack {
-                    ProgressView("Загрузка контрагентов...")
-                        .scaleEffect(1.2)
-                    Text("Подождите, загружаем данные...")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .padding(.top, 8)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if viewModel.contractors.isEmpty {
-                VStack(spacing: 16) {
-                    Image(systemName: "person.3.fill")
-                        .font(.system(size: 60))
-                        .foregroundColor(.gray)
-                    
-                    Text("Контрагенты не найдены")
-                        .font(.title2)
-                        .fontWeight(.medium)
-                    
-                    Text("Нажмите кнопку \"Добавить\" чтобы создать первого контрагента")
-                        .font(.body)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                List {
-                    ForEach(viewModel.contractors) { contractor in
-                        Button {
-                            viewModel.selectedContractor = contractor
-                        } label: {
-                            ContractorRowView(contractor: contractor)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .onDelete { indexSet in
-                        guard let index = indexSet.first else { return }
-                        Task {
-                            await viewModel.deleteContractor(viewModel.contractors[index])
-                        }
-                    }
-                }
-                .refreshable {
-                    await viewModel.refreshContractors()
-                }
-            }
-            
-            Spacer()
-            
-            HStack {
-                Button("Добавить") {
-                    Task {
-                        viewModel.showingAddContractor = true
-                    }
-                }
-                .tint(.appRed)
+            VStack {
+                Text("Список контрагентов")
+                    .font(.title2)
+                    .padding()
                 
-                Button("Выйти") {
-                    Task {
-                        await appState.logout()
+                if viewModel.isLoading && viewModel.contractors.isEmpty {
+                    VStack {
+                        ProgressView("Загрузка контрагентов...")
+                            .scaleEffect(1.2)
+                        Text("Подождите, загружаем данные...")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .padding(.top, 8)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if viewModel.contractors.isEmpty {
+                    VStack(spacing: 16) {
+                        Image(systemName: "person.3.fill")
+                            .font(.system(size: 60))
+                            .foregroundColor(.gray)
+                        
+                        Text("Контрагенты не найдены")
+                            .font(.title2)
+                            .fontWeight(.medium)
+                        
+                        Text("Нажмите кнопку \"Добавить\" чтобы создать первого контрагента")
+                            .font(.body)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    List {
+                        ForEach(viewModel.contractors) { contractor in
+                            Button {
+                                viewModel.selectedContractor = contractor
+                            } label: {
+                                ContractorRowView(contractor: contractor)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .onDelete { [weak viewModel] indexSet in
+                            guard let index = indexSet.first, let viewModel = viewModel else { return }
+                            Task {
+                                await viewModel.deleteContractor(viewModel.contractors[index])
+                            }
+                        }
+                    }
+                    .refreshable { [weak viewModel] in
+                        await viewModel?.refreshContractors()
                     }
                 }
-                .tint(.black)
-            }
-            .buttonStyle(.borderedProminent)
-            .cornerRadius(8)
-            .padding()
-        }
-        .sheet(isPresented: $viewModel.showingAddContractor) {
-            ContractorDetailView()
-                .onDisappear {
-                    Task {
-                        await viewModel.loadContractors()
+                
+                Spacer()
+                
+                HStack {
+                    Button("Добавить") {
+                        Task { [weak viewModel] in
+                            viewModel?.showingAddContractor = true
+                        }
                     }
-                }
-        }
-        .sheet(item: $viewModel.selectedContractor) { contractor in
-            ContractorDetailView(contractor: contractor)
-                .onDisappear {
-                    Task {
-                        await viewModel.loadContractors()
+                    .tint(.appRed)
+                    
+                    Button("Выйти") {
+                        Task { [weak appState] in
+                            await appState?.logout()
+                        }
                     }
+                    .tint(.black)
                 }
-        }
-        .alert("Ошибка", isPresented: .constant(viewModel.errorMessage != nil), actions: {
-            Button("ОК", role: .cancel) {
-                viewModel.errorMessage = nil
+                .buttonStyle(.borderedProminent)
+                .cornerRadius(8)
+                .padding()
             }
-        }, message: {
-            if let errorMessage = viewModel.errorMessage {
-                Text(errorMessage)
+            .sheet(isPresented: $viewModel.showingAddContractor) {
+                ContractorDetailViewFactory.create(serviceContainer: serviceContainer)
+                    .onDisappear {
+                        Task { [weak viewModel] in
+                            await viewModel?.loadContractors()
+                        }
+                    }
             }
-        })
-        .onAppear {
-            Task {
-                await viewModel.loadContractors()
+            .sheet(item: $viewModel.selectedContractor) { (contractor: Contractor) in
+                ContractorDetailViewFactory.create(contractor: contractor, serviceContainer: serviceContainer)
+                    .onDisappear {
+                        Task { [weak viewModel] in
+                            await viewModel?.loadContractors()
+                        }
+                    }
+            }
+            .alert("Ошибка", isPresented: .constant(viewModel.errorMessage != nil), actions: {
+                Button("ОК", role: .cancel) { [weak viewModel] in
+                    viewModel?.errorMessage = nil
+                }
+            }, message: {
+                if let errorMessage = viewModel.errorMessage {
+                    Text(errorMessage)
+                }
+            })
+            .onAppear { [weak viewModel] in
+                viewModel?.updateAppState(appState)
+                Task {
+                    await viewModel?.loadContractors()
+                }
             }
         }
     }
 }
 
 #Preview {
-    ContractorView()
-        .environmentObject(AppStateManager())
+    let container = ServiceContainer()
+    let appState = AppStateManager(tokenManager: container.tokenManager)
+    return ContractorViewFactory.create(serviceContainer: container, appState: appState)
+        .environmentObject(appState)
+        .environmentObject(container)
 }
 

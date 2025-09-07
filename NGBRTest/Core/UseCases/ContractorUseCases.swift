@@ -4,7 +4,7 @@ import Foundation
 final class FetchContractorsUseCase: FetchContractorsUseCaseProtocol {
     private let contractorRepository: ContractorRepositoryProtocol
     
-    init(contractorRepository: ContractorRepositoryProtocol = ContractorRepository()) {
+    init(contractorRepository: ContractorRepositoryProtocol) {
         self.contractorRepository = contractorRepository
     }
     
@@ -17,7 +17,7 @@ final class FetchContractorsUseCase: FetchContractorsUseCaseProtocol {
 final class CreateContractorUseCase: CreateContractorUseCaseProtocol {
     private let contractorRepository: ContractorRepositoryProtocol
     
-    init(contractorRepository: ContractorRepositoryProtocol = ContractorRepository()) {
+    init(contractorRepository: ContractorRepositoryProtocol) {
         self.contractorRepository = contractorRepository
     }
     
@@ -36,7 +36,7 @@ final class CreateContractorUseCase: CreateContractorUseCaseProtocol {
 final class UpdateContractorUseCase: UpdateContractorUseCaseProtocol {
     private let contractorRepository: ContractorRepositoryProtocol
     
-    init(contractorRepository: ContractorRepositoryProtocol = ContractorRepository()) {
+    init(contractorRepository: ContractorRepositoryProtocol) {
         self.contractorRepository = contractorRepository
     }
     
@@ -60,7 +60,7 @@ final class UpdateContractorUseCase: UpdateContractorUseCaseProtocol {
 final class DeleteContractorUseCase: DeleteContractorUseCaseProtocol {
     private let contractorRepository: ContractorRepositoryProtocol
     
-    init(contractorRepository: ContractorRepositoryProtocol = ContractorRepository()) {
+    init(contractorRepository: ContractorRepositoryProtocol) {
         self.contractorRepository = contractorRepository
     }
     
@@ -73,7 +73,7 @@ final class DeleteContractorUseCase: DeleteContractorUseCaseProtocol {
 final class LoadLocalContractorsUseCase: LoadLocalContractorsUseCaseProtocol {
     private let contractorRepository: ContractorRepositoryProtocol
     
-    init(contractorRepository: ContractorRepositoryProtocol = ContractorRepository()) {
+    init(contractorRepository: ContractorRepositoryProtocol) {
         self.contractorRepository = contractorRepository
     }
     

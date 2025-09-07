@@ -13,21 +13,23 @@ final class ContractorDetailViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var isSaved = false
     
-    // MARK: - Dependencies
-    private let createContractorUseCase: CreateContractorUseCaseProtocol
-    private let updateContractorUseCase: UpdateContractorUseCaseProtocol
-    
+    // MARK: - Private Properties
+    private let contractorRepository: ContractorRepositoryProtocol
     private let contractor: Contractor?
-    private let isEditing: Bool
     
-    // MARK: - Initialization
-    init(contractor: Contractor? = nil,
-         createContractorUseCase: CreateContractorUseCaseProtocol = CreateContractorUseCase(),
-         updateContractorUseCase: UpdateContractorUseCaseProtocol = UpdateContractorUseCase()) {
-        self.createContractorUseCase = createContractorUseCase
-        self.updateContractorUseCase = updateContractorUseCase
+    // MARK: - Computed Properties
+    var title: String {
+        contractor == nil ? "Добавить контрагента" : "Редактировать"
+    }
+    
+    var saveButtonTitle: String {
+        contractor == nil ? "Создать" : "Сохранить"
+    }
+    
+    // MARK: - Init
+    init(contractor: Contractor? = nil, contractorRepository: ContractorRepositoryProtocol) {
         self.contractor = contractor
-        self.isEditing = contractor != nil
+        self.contractorRepository = contractorRepository
         
         if let contractor = contractor {
             self.name = contractor.name
@@ -37,15 +39,10 @@ final class ContractorDetailViewModel: ObservableObject {
         }
     }
     
-    // MARK: - Save Methods
+    // MARK: - Save Method
     func save() async {
         guard !name.isEmpty else {
             errorMessage = "Название не может быть пустым"
-            return
-        }
-        
-        guard !inn.isEmpty else {
-            errorMessage = "ИНН не может быть пустым"
             return
         }
         
@@ -53,25 +50,28 @@ final class ContractorDetailViewModel: ObservableObject {
         errorMessage = nil
         
         do {
-            if isEditing {
-                _ = try await updateContractorUseCase.execute(
-                    id: String(contractor!.id),
-                    name: name,
-                    details: details,
-                    inn: inn,
-                    kpp: kpp.isEmpty ? nil : kpp
+            if let contractor = contractor {
+                _ = try await contractorRepository.updateContractor(
+                    id: String(contractor.id),
+                    UpdateContractorRequest(
+                        id: Int(contractor.id),
+                        fullName: details.isEmpty ? nil : details,
+                        name: name,
+                        inn: inn,
+                        kpp: kpp.isEmpty ? nil : kpp
+                    )
                 )
             } else {
-                _ = try await createContractorUseCase.execute(
-                    name: name,
-                    details: details,
-                    inn: inn,
-                    kpp: kpp.isEmpty ? nil : kpp
+                _ = try await contractorRepository.createContractor(
+                    CreateContractorRequest(
+                        fullName: details.isEmpty ? nil : details,
+                        name: name,
+                        inn: inn,
+                        kpp: kpp.isEmpty ? nil : kpp
+                    )
                 )
             }
-            
             isSaved = true
-            
         } catch ContractorError.success {
             isSaved = true
         } catch {
@@ -80,13 +80,5 @@ final class ContractorDetailViewModel: ObservableObject {
         
         isLoading = false
     }
-    
-    // MARK: - Title
-    var title: String {
-        isEditing ? "Редактировать" : "Новый контрагент"
-    }
-    
-    var saveButtonTitle: String {
-        isEditing ? "Сохранить" : "Создать"
-    }
 }
+

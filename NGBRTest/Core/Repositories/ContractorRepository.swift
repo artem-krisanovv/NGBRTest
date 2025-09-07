@@ -6,13 +6,13 @@ final class ContractorRepository: ContractorRepositoryProtocol {
     private let apiClient: APIClientProtocol
     private let persistenceController: PersistenceController
     
-    init(apiClient: APIClientProtocol = APIClient.shared,
-         persistenceController: PersistenceController = .shared) {
+    // MARK: - Init
+    init(apiClient: APIClientProtocol, persistenceController: PersistenceController) {
         self.apiClient = apiClient
         self.persistenceController = persistenceController
     }
     
-    // MARK: - Remote Operations
+    // MARK: - Remote Func
     func fetchContractors() async throws -> [Contractor] {
         do {
             let response: [Contractor] = try await apiClient.request(
@@ -65,23 +65,21 @@ final class ContractorRepository: ContractorRepositoryProtocol {
     }
     
     func saveContractorsLocally(_ contractors: [Contractor]) async throws {
-        let context = persistenceController.container.newBackgroundContext()
+        let context = persistenceController.newBackgroundContext()
         
         try await context.perform {
             let fetchRequest: NSFetchRequest<Counterparty> = Counterparty.fetchRequest()
             let existingContractors = try context.fetch(fetchRequest)
-            let newContractorIds = Set(contractors.map { String($0.id) })
+            let newContractorIds = Set(contractors.map { Int64($0.id) })
             
             existingContractors.forEach { existing in
-                if let existingId = existing.id, !newContractorIds.contains(existingId) {
+                if !newContractorIds.contains(existing.id) {
                     context.delete(existing)
                 }
             }
             
             for contractor in contractors {
-                let contractorId = String(contractor.id)
-                
-                let existing = existingContractors.first { $0.id == contractorId }
+                let existing = existingContractors.first { $0.id == contractor.id }
                 
                 if let existing = existing {
                     existing.name = contractor.name
@@ -91,11 +89,6 @@ final class ContractorRepository: ContractorRepositoryProtocol {
                     existing.updatedAt = Date()
                 } else {
                     let localContractor = contractor.toLocalModel(context: context)
-                    localContractor.id = contractorId
-                    localContractor.name = contractor.name
-                    localContractor.details = contractor.fullName
-                    localContractor.inn = contractor.inn
-                    localContractor.kpp = contractor.kpp
                     localContractor.updatedAt = Date()
                 }
             }
@@ -104,7 +97,7 @@ final class ContractorRepository: ContractorRepositoryProtocol {
         }
     }
     
-    // MARK: - Local Operations
+    // MARK: - Local Func
     func loadContractorsFromLocal() async throws -> [Contractor] {
         let context = persistenceController.container.viewContext
         let fetchRequest: NSFetchRequest<Counterparty> = Counterparty.fetchRequest()

@@ -2,13 +2,12 @@ import SwiftUI
 
 // MARK: - Contractor Detail View
 struct ContractorDetailView: View {
-    @StateObject private var viewModel: ContractorDetailViewModel
+    @ObservedObject private var viewModel: ContractorDetailViewModel
     @Environment(\.dismiss) private var dismiss
     
-    init(contractor: Contractor? = nil) {
-        _viewModel = StateObject(
-            wrappedValue: ContractorDetailViewModel(contractor: contractor)
-        )
+    // MARK: - Init
+    init(viewModel: ContractorDetailViewModel) {
+        self.viewModel = viewModel
     }
     
     // MARK: - Body
@@ -32,17 +31,17 @@ struct ContractorDetailView: View {
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(viewModel.saveButtonTitle) {
+                    Button(viewModel.saveButtonTitle) { [weak viewModel] in
                         Task {
-                            await viewModel.save()
+                            await viewModel?.save()
                         }
                     }
                     .disabled(viewModel.isLoading || viewModel.name.isEmpty)
                 }
             }
             .alert("Ошибка", isPresented: .constant(viewModel.errorMessage != nil)) {
-                Button("ОК") {
-                    viewModel.errorMessage = nil
+                Button("ОК") { [weak viewModel] in
+                    viewModel?.errorMessage = nil
                 }
             } message: {
                 if let errorMessage = viewModel.errorMessage {
@@ -59,5 +58,5 @@ struct ContractorDetailView: View {
 }
 
 #Preview {
-    ContractorDetailView()
+    ContractorDetailViewFactory.create(serviceContainer: ServiceContainer())
 }

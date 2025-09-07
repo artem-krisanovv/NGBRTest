@@ -1,4 +1,3 @@
-import Foundation
 import SwiftUI
 
 // MARK: - App State Manager
@@ -8,18 +7,22 @@ final class AppStateManager: ObservableObject {
     @Published var isAuthenticated = false
     @Published var showingLogin = false
     
-    // MARK: - Initialization
-    init() {
+    // MARK: - Private Properties
+    private let tokenManager: TokenManagerProtocol
+    
+    // MARK: - Init
+    init(tokenManager: TokenManagerProtocol) {
+        self.tokenManager = tokenManager
         checkAuthenticationStatus()
     }
     
     // MARK: - Authentication Methods
     func checkAuthenticationStatus() {
-        isAuthenticated = TokenManager.shared.loadSavedToken() != nil
+        isAuthenticated = tokenManager.loadSavedToken() != nil
     }
     
     func logout() async {
-        TokenManager.shared.clearTokens()
+        tokenManager.clearTokens()
         isAuthenticated = false
         showingLogin = true
     }

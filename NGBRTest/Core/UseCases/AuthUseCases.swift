@@ -4,7 +4,7 @@ import Foundation
 final class LoginUseCase: LoginUseCaseProtocol {
     private let authRepository: AuthRepositoryProtocol
     
-    init(authRepository: AuthRepositoryProtocol = AuthRepository()) {
+    init(authRepository: AuthRepositoryProtocol) {
         self.authRepository = authRepository
     }
     
@@ -17,7 +17,7 @@ final class LoginUseCase: LoginUseCaseProtocol {
 final class LogoutUseCase: LogoutUseCaseProtocol {
     private let authRepository: AuthRepositoryProtocol
     
-    init(authRepository: AuthRepositoryProtocol = AuthRepository()) {
+    init(authRepository: AuthRepositoryProtocol) {
         self.authRepository = authRepository
     }
     

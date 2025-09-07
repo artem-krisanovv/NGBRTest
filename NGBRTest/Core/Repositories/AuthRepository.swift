@@ -5,8 +5,8 @@ final class AuthRepository: AuthRepositoryProtocol {
     private let apiClient: APIClientProtocol
     private let tokenManager: TokenManagerProtocol
     
-    init(apiClient: APIClientProtocol = APIClient.shared,
-         tokenManager: TokenManagerProtocol = TokenManager.shared) {
+    // MARK: - Init
+    init(apiClient: APIClientProtocol, tokenManager: TokenManagerProtocol) {
         self.apiClient = apiClient
         self.tokenManager = tokenManager
     }

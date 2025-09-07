@@ -11,22 +11,13 @@ final class ContractorViewModel: ObservableObject {
     @Published var showingAddContractor = false
     @Published var selectedContractor: Contractor?
     
-    // MARK: - Dependencies
-    private var appState: AppStateManager
-    private let fetchContractorsUseCase: FetchContractorsUseCaseProtocol
-    private let deleteContractorUseCase: DeleteContractorUseCaseProtocol
-    private let loadLocalContractorsUseCase: LoadLocalContractorsUseCaseProtocol
+    // MARK: - Private Properties
+    private let contractorRepository: ContractorRepositoryProtocol
+    private weak var appState: AppStateManager?
     
-    // MARK: - Initialization
-    init(
-        fetchContractorsUseCase: FetchContractorsUseCaseProtocol = FetchContractorsUseCase(),
-        deleteContractorUseCase: DeleteContractorUseCaseProtocol = DeleteContractorUseCase(),
-        loadLocalContractorsUseCase: LoadLocalContractorsUseCaseProtocol = LoadLocalContractorsUseCase(),
-        appState: AppStateManager
-    ) {
-        self.fetchContractorsUseCase = fetchContractorsUseCase
-        self.deleteContractorUseCase = deleteContractorUseCase
-        self.loadLocalContractorsUseCase = loadLocalContractorsUseCase
+    // MARK: - Initi
+    init(contractorRepository: ContractorRepositoryProtocol, appState: AppStateManager? = nil) {
+        self.contractorRepository = contractorRepository
         self.appState = appState
     }
     
@@ -41,31 +32,30 @@ final class ContractorViewModel: ObservableObject {
         errorMessage = nil
         
         do {
-            contractors = try await fetchContractorsUseCase.execute()
+            contractors = try await contractorRepository.fetchContractors()
         } catch APIError.unauthorized {
             errorMessage = "Необходима авторизация"
-            await appState.logout()
+            await appState?.logout()
         } catch APIError.accessDenied {
             errorMessage = "Доступ запрещен"
         } catch {
             errorMessage = error.localizedDescription
             do {
-                contractors = try await loadLocalContractorsUseCase.execute()
+                contractors = try await contractorRepository.loadContractorsFromLocal()
             } catch {
                 contractors = []
                 print("Ошибка при загрузке контрагента: \(error)")
             }
         }
-        
         isLoading = false
     }
     
     func deleteContractor(_ contractor: Contractor) async {
         do {
-            try await deleteContractorUseCase.execute(id: String(contractor.id))
+            try await contractorRepository.deleteContractor(id: String(contractor.id))
             contractors.removeAll { $0.id == contractor.id }
         } catch APIError.unauthorized {
-            await appState.logout()
+            await appState?.logout()
         } catch {
             errorMessage = "Ошибка при удалении: \(error.localizedDescription)"
             await loadContractors()
