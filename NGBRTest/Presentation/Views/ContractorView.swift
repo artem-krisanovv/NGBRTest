@@ -123,11 +123,3 @@ struct ContractorView: View {
     }
 }
 
-#Preview {
-    let container = ServiceContainer()
-    let appState = AppStateManager(tokenManager: container.tokenManager)
-    return ContractorViewFactory.create(serviceContainer: container, appState: appState)
-        .environmentObject(appState)
-        .environmentObject(container)
-}
-

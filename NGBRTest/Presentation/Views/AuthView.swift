@@ -82,9 +82,3 @@ struct AuthView: View {
         }
     }
 }
-
-#Preview {
-    let container = ServiceContainer()
-    let appState = AppStateManager(tokenManager: container.tokenManager)
-    return AuthViewFactory.create(serviceContainer: container, appState: appState)
-}

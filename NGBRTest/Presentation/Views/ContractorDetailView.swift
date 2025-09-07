@@ -56,7 +56,3 @@ struct ContractorDetailView: View {
         }
     }
 }
-
-#Preview {
-    ContractorDetailViewFactory.create(serviceContainer: ServiceContainer())
-}
