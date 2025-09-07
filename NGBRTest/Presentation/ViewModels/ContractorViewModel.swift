@@ -15,7 +15,7 @@ final class ContractorViewModel: ObservableObject {
     private let contractorRepository: ContractorRepositoryProtocol
     private weak var appState: AppStateManager?
     
-    // MARK: - Initi
+    // MARK: - Init
     init(contractorRepository: ContractorRepositoryProtocol, appState: AppStateManager? = nil) {
         self.contractorRepository = contractorRepository
         self.appState = appState

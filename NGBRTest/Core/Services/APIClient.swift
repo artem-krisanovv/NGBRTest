@@ -44,7 +44,7 @@ final class APIClient: APIClientProtocol {
             }
             
             let responseString = String(data: data, encoding: .utf8) ?? "No data"
-            print("API Response (\(path)): \(responseString)")
+            print("API ответ (\(path)): \(responseString)")
             
             switch http.statusCode {
             case 200...299:
@@ -52,8 +52,8 @@ final class APIClient: APIClientProtocol {
                     let decoded = try JSONDecoder().decode(T.self, from: data)
                     return decoded
                 } catch {
-                    print("Decoding error for \(path): \(error)")
-                    print("Response data: \(responseString)")
+                    print("Ошибка декодирования \(path): \(error)")
+                    print("Ответ: \(responseString)")
                     throw APIError.decodingError
                 }
                 
@@ -143,7 +143,7 @@ extension APIClient {
         }
         
         let responseString = String(data: data, encoding: .utf8) ?? "No data"
-        print("API Response: \(responseString)")
+        print("API ответ: \(responseString)")
         
         guard (200..<300).contains(http.statusCode) else {
             switch http.statusCode {
@@ -153,7 +153,7 @@ extension APIClient {
                 throw APIError.accessDenied
             default:
                 let errorBody = String(data: data, encoding: .utf8) ?? "No data"
-                print("API Error \(http.statusCode): \(errorBody)")
+                print("Ошибка API \(http.statusCode): \(errorBody)")
                 throw APIError.httpError(status: http.statusCode, data: data)
             }
         }
@@ -162,8 +162,8 @@ extension APIClient {
             try tokenManager.saveTokens(access: decoded.token, refresh: decoded.refreshToken)
             return AuthToken(accessToken: decoded.token, refreshToken: decoded.refreshToken)
         } catch {
-            print("Decoding error: \(error)")
-            print("Response data: \(responseString)")
+            print("Ошибка декодирования: \(error)")
+            print("Ответ: \(responseString)")
             throw APIError.decodingError
         }
     }

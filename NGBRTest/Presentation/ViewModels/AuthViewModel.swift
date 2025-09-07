@@ -11,7 +11,7 @@ final class AuthViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var isAuthenticated = false
     
-    // MARK: - Dependencies
+    // MARK: - Private Properties
     private let authRepository: AuthRepositoryProtocol
     private let tokenManager: TokenManagerProtocol
     
